@@ -14,12 +14,15 @@ class InMemoryValoresCategoriaRepository(ValoresCategoriaRepository):
         self._siguiente_id = 1
         self._lock = RLock()
 
-    def listar(self, categoria: str) -> list[ValorCategoriaParametro]:
+    def listar(
+        self, categoria: str, activo: bool | None = None
+    ) -> list[ValorCategoriaParametro]:
         with self._lock:
             valores = [
                 valor
                 for valor in self._valores.values()
                 if valor.categoria.casefold() == categoria.casefold()
+                and (activo is None or valor.activo is activo)
             ]
             return sorted(valores, key=lambda valor: (valor.orden, valor.id))
 
@@ -85,6 +88,26 @@ class InMemoryValoresCategoriaRepository(ValoresCategoriaRepository):
                 ),
                 orden=orden if orden is not None else valor.orden,
                 activo=valor.activo,
+            )
+            self._valores[valor_id] = valor_actualizado
+            return valor_actualizado
+
+    def actualizar_estado(
+        self, categoria: str, valor_id: int, activo: bool
+    ) -> ValorCategoriaParametro:
+        with self._lock:
+            valor = self._valores.get(valor_id)
+            if valor is None or valor.categoria.casefold() != categoria.casefold():
+                raise ValorCategoriaNoEncontradoError(valor_id)
+
+            valor_actualizado = ValorCategoriaParametro(
+                id=valor.id,
+                categoria=valor.categoria,
+                codigo=valor.codigo,
+                nombre=valor.nombre,
+                descripcion=valor.descripcion,
+                orden=valor.orden,
+                activo=activo,
             )
             self._valores[valor_id] = valor_actualizado
             return valor_actualizado

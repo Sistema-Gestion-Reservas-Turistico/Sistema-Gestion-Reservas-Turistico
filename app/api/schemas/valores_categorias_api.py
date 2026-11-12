@@ -18,6 +18,12 @@ class ValorCategoriaEditar(BaseModel):
     orden: int | None = Field(default=None, strict=True)
 
 
+class CambiarEstadoValorCategoria(BaseModel):
+    model_config = ConfigDict(strict=True, extra="forbid")
+
+    activo: bool
+
+
 class ValorCategoriaData(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -33,6 +39,19 @@ class ValorCategoriaData(BaseModel):
 class ValorCategoriaResponse(BaseModel):
     mensaje: str
     data: ValorCategoriaData
+    success: bool
+
+
+class ValorCategoriaEstadoData(BaseModel):
+    id: int
+    categoria: str
+    codigo: str
+    activo: bool
+
+
+class ValorCategoriaEstadoResponse(BaseModel):
+    mensaje: str
+    data: ValorCategoriaEstadoData
     success: bool
 
 

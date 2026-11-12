@@ -48,3 +48,11 @@ Un código repetido responde `409`; una categoría inexistente responde `404`.
 Los datos también se almacenan en memoria. La autorización y el error `503`
 por base de datos siguen pendientes hasta que existan autenticación y
 persistencia en base de datos.
+
+## Activar e inactivar valores
+
+HU-01C expone `PATCH /api/v1/parametros/categorias/{clave}/valores/{id}/estado`
+con un cuerpo `{"activo": false}` o `{"activo": true}`. El cambio conserva el
+registro y puede repetirse sin error. El listado administrativo acepta el
+filtro opcional `?activo=true` o `?activo=false`; sin filtro incluye todos los
+valores.

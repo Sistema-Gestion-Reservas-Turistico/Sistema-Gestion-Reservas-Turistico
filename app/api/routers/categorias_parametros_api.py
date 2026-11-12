@@ -7,6 +7,7 @@ from app.api.dependencies.categorias_parametros import (
     obtener_repositorio_categoria_parametro,
 )
 from app.api.dependencies.valores_categorias_api import (
+    obtener_caso_actualizar_estado_valor_categoria,
     obtener_caso_actualizar_valor_categoria,
     obtener_caso_crear_valor_categoria,
     obtener_caso_listar_valores_categoria,
@@ -19,10 +20,13 @@ from app.api.schemas.categorias_parametros import (
     CategoriasParametroResponse,
 )
 from app.api.schemas.valores_categorias_api import (
+    CambiarEstadoValorCategoria,
     ValorCategoriaCrear,
     ValorCategoriaData,
     ValorCategoriaEditar,
     ValorCategoriaErrorResponse,
+    ValorCategoriaEstadoData,
+    ValorCategoriaEstadoResponse,
     ValorCategoriaResponse,
     ValoresCategoriaResponse,
 )
@@ -41,6 +45,9 @@ from app.services.use_cases.actualizar_categoria_parametro import (
 from app.services.use_cases.crear_categoria_parametro import CrearCategoriaParametro
 from app.services.use_cases.actualizar_valor_categoria_parametro import (
     ActualizarValorCategoriaParametro,
+)
+from app.services.use_cases.actualizar_estado_valor_categoria_parametro import (
+    ActualizarEstadoValorCategoriaParametro,
 )
 from app.services.use_cases.crear_valor_categoria_parametro import (
     CrearValorCategoriaParametro,
@@ -152,12 +159,13 @@ def actualizar_categoria_parametro(
 )
 def listar_valores_categoria(
     clave: str,
+    activo: bool | None = None,
     caso: ListarValoresCategoriaParametro = Depends(
         obtener_caso_listar_valores_categoria
     ),
 ) -> ValoresCategoriaResponse | JSONResponse:
     try:
-        valores = caso.ejecutar(clave)
+        valores = caso.ejecutar(clave, activo)
     except CategoriaValorNoEncontradaError:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -278,6 +286,50 @@ def actualizar_valor_categoria(
     return ValorCategoriaResponse(
         mensaje="Valor guardado correctamente",
         data=ValorCategoriaData.model_validate(valor),
+        success=True,
+    )
+
+
+@router.patch(
+    "/{clave}/valores/{id}/estado",
+    response_model=ValorCategoriaEstadoResponse,
+    responses={
+        400: {"model": ValorCategoriaErrorResponse},
+        404: {"model": ValorCategoriaErrorResponse},
+    },
+    summary="Activar o inactivar un valor",
+    description=(
+        "Cambia el estado del valor sin eliminarlo. El listado administrativo "
+        "incluye todos los estados y permite filtrarlos mediante el parámetro activo."
+    ),
+)
+def actualizar_estado_valor_categoria(
+    clave: str,
+    id: int,
+    datos: CambiarEstadoValorCategoria,
+    caso: ActualizarEstadoValorCategoriaParametro = Depends(
+        obtener_caso_actualizar_estado_valor_categoria
+    ),
+) -> ValorCategoriaEstadoResponse | JSONResponse:
+    try:
+        valor = caso.ejecutar(clave, id, datos.activo)
+    except ValorCategoriaNoEncontradoError:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={
+                "mensaje": "El valor indicado no existe",
+                "data": None,
+                "success": False,
+            },
+        )
+    return ValorCategoriaEstadoResponse(
+        mensaje="Estado del valor actualizado correctamente",
+        data=ValorCategoriaEstadoData(
+            id=valor.id,
+            categoria=valor.categoria,
+            codigo=valor.codigo,
+            activo=valor.activo,
+        ),
         success=True,
     )
 

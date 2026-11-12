@@ -17,10 +17,12 @@ class ListarValoresCategoriaParametro:
         self._categorias = categorias
         self._valores = valores
 
-    def ejecutar(self, clave: str) -> list[ValorCategoriaParametro]:
+    def ejecutar(
+        self, clave: str, activo: bool | None = None
+    ) -> list[ValorCategoriaParametro]:
         if not any(
             categoria.clave.casefold() == clave.casefold()
             for categoria in self._categorias.listar()
         ):
             raise CategoriaValorNoEncontradaError(clave)
-        return self._valores.listar(clave)
+        return self._valores.listar(clave, activo)

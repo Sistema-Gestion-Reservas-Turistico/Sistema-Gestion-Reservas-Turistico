@@ -21,7 +21,9 @@ async def manejar_error_validacion(
 
     errores = error.errors()
     if "/valores" in request.url.path:
-        if request.method == "PUT" and any(
+        if request.method == "PATCH":
+            mensaje = "El campo activo debe ser verdadero o falso"
+        elif request.method == "PUT" and any(
             "codigo" in item.get("loc", ())
             and item.get("type") == "extra_forbidden"
             for item in errores

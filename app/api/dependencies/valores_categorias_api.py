@@ -9,6 +9,9 @@ from app.repositories.adapters.in_memory_valores_categorias_repository import (
 from app.services.use_cases.actualizar_valor_categoria_parametro import (
     ActualizarValorCategoriaParametro,
 )
+from app.services.use_cases.actualizar_estado_valor_categoria_parametro import (
+    ActualizarEstadoValorCategoriaParametro,
+)
 from app.services.use_cases.crear_valor_categoria_parametro import (
     CrearValorCategoriaParametro,
 )
@@ -40,5 +43,12 @@ def obtener_caso_actualizar_valor_categoria() -> ActualizarValorCategoriaParamet
     return ActualizarValorCategoriaParametro(
         obtener_repositorio_categoria_parametro(),
         obtener_repositorio_valores_categoria(),
+    )
+
+
+def obtener_caso_actualizar_estado_valor_categoria(
+) -> ActualizarEstadoValorCategoriaParametro:
+    return ActualizarEstadoValorCategoriaParametro(
+        obtener_repositorio_valores_categoria()
     )
 

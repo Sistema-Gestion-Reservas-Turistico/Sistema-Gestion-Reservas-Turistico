@@ -5,7 +5,9 @@ from app.domain.entities.valor_categoria_parametro import ValorCategoriaParametr
 
 class ValoresCategoriaRepository(ABC):
     @abstractmethod
-    def listar(self, categoria: str) -> list[ValorCategoriaParametro]:
+    def listar(
+        self, categoria: str, activo: bool | None = None
+    ) -> list[ValorCategoriaParametro]:
         raise NotImplementedError
 
     @abstractmethod
@@ -27,5 +29,11 @@ class ValoresCategoriaRepository(ABC):
         nombre: str | None,
         descripcion: str | None,
         orden: int | None,
+    ) -> ValorCategoriaParametro:
+        raise NotImplementedError
+
+    @abstractmethod
+    def actualizar_estado(
+        self, categoria: str, valor_id: int, activo: bool
     ) -> ValorCategoriaParametro:
         raise NotImplementedError
