@@ -33,6 +33,7 @@ class InMemoryValoresCategoriaRepository(ValoresCategoriaRepository):
         nombre: str,
         descripcion: str,
         orden: int | None,
+        es_sistema: bool = False,
     ) -> ValorCategoriaParametro:
         with self._lock:
             if any(
@@ -60,6 +61,7 @@ class InMemoryValoresCategoriaRepository(ValoresCategoriaRepository):
                 descripcion=descripcion,
                 orden=nuevo_orden,
                 activo=True,
+                es_sistema=es_sistema,
             )
             self._valores[valor.id] = valor
             self._siguiente_id += 1
@@ -88,6 +90,7 @@ class InMemoryValoresCategoriaRepository(ValoresCategoriaRepository):
                 ),
                 orden=orden if orden is not None else valor.orden,
                 activo=valor.activo,
+                es_sistema=valor.es_sistema,
             )
             self._valores[valor_id] = valor_actualizado
             return valor_actualizado
@@ -108,6 +111,7 @@ class InMemoryValoresCategoriaRepository(ValoresCategoriaRepository):
                 descripcion=valor.descripcion,
                 orden=valor.orden,
                 activo=activo,
+                es_sistema=valor.es_sistema,
             )
             self._valores[valor_id] = valor_actualizado
             return valor_actualizado

@@ -24,6 +24,7 @@ class CrearValorCategoriaParametro:
         nombre: str,
         descripcion: str,
         orden: int | None,
+        es_sistema: bool = False,
     ) -> ValorCategoriaParametro:
         categoria = next(
             (
@@ -36,5 +37,5 @@ class CrearValorCategoriaParametro:
         if categoria is None:
             raise CategoriaValorNoEncontradaError(clave)
         return self._valores.crear(
-            categoria.clave, codigo, nombre, descripcion, orden
+            categoria.clave, codigo, nombre, descripcion, orden, es_sistema
         )

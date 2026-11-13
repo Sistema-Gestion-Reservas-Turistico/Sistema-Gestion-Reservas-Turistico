@@ -1,15 +1,30 @@
+from contextlib import asynccontextmanager
+from collections.abc import AsyncIterator
+
 from fastapi import Body, FastAPI
 from fastapi.exception_handlers import request_validation_exception_handler
 from fastapi.exceptions import RequestValidationError
 from fastapi.requests import Request
 from fastapi.responses import JSONResponse
 
+from app.api.dependencies.parametros_transporte import (
+    obtener_caso_cargar_parametros_transporte,
+)
+from app.api.routers.parametros_transporte_api import router as transporte_router
 from app.api.routers.categorias_parametros_api import (
     router as categorias_parametros_router,
 )
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    obtener_caso_cargar_parametros_transporte().ejecutar()
+    yield
+
+
+app = FastAPI(title="Sistema de Gestión de Reservas Turístico", lifespan=lifespan)
 app.include_router(categorias_parametros_router)
+app.include_router(transporte_router)
 
 
 @app.exception_handler(RequestValidationError)

@@ -10,3 +10,4 @@ class ValorCategoriaParametro:
     descripcion: str
     orden: int
     activo: bool
+    es_sistema: bool = False

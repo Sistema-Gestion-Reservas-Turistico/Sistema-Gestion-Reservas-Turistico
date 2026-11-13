@@ -38,6 +38,7 @@ from app.domain.exceptions.valores_categorias_domain import (
     CategoriaValorNoEncontradaError,
     ValorCategoriaDuplicadoError,
     ValorCategoriaNoEncontradoError,
+    ValorCategoriaSistemaNoInactivableError,
 )
 from app.services.use_cases.actualizar_categoria_parametro import (
     ActualizarCategoriaParametro,
@@ -296,6 +297,7 @@ def actualizar_valor_categoria(
     responses={
         400: {"model": ValorCategoriaErrorResponse},
         404: {"model": ValorCategoriaErrorResponse},
+        409: {"model": ValorCategoriaErrorResponse},
     },
     summary="Activar o inactivar un valor",
     description=(
@@ -313,6 +315,15 @@ def actualizar_estado_valor_categoria(
 ) -> ValorCategoriaEstadoResponse | JSONResponse:
     try:
         valor = caso.ejecutar(clave, id, datos.activo)
+    except ValorCategoriaSistemaNoInactivableError:
+        return JSONResponse(
+            status_code=status.HTTP_409_CONFLICT,
+            content={
+                "mensaje": "No se puede inactivar un valor protegido del sistema",
+                "data": None,
+                "success": False,
+            },
+        )
     except ValorCategoriaNoEncontradoError:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
