@@ -34,6 +34,7 @@ class ValorCategoriaData(BaseModel):
     descripcion: str
     orden: int
     activo: bool
+    es_sistema: bool
 
 
 class ValorCategoriaResponse(BaseModel):
@@ -58,6 +59,17 @@ class ValorCategoriaEstadoResponse(BaseModel):
 class ValoresCategoriaResponse(BaseModel):
     mensaje: str
     data: list[ValorCategoriaData]
+    success: bool
+
+
+class ParametrosTransporteData(BaseModel):
+    tipo_vehiculo: list[ValorCategoriaData]
+    estado_vehiculo: list[ValorCategoriaData]
+
+
+class ParametrosTransporteResponse(BaseModel):
+    mensaje: str
+    data: ParametrosTransporteData
     success: bool
 
 

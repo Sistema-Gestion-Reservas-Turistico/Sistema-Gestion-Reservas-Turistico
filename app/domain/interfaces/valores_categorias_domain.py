@@ -18,6 +18,7 @@ class ValoresCategoriaRepository(ABC):
         nombre: str,
         descripcion: str,
         orden: int | None,
+        es_sistema: bool = False,
     ) -> ValorCategoriaParametro:
         raise NotImplementedError
 

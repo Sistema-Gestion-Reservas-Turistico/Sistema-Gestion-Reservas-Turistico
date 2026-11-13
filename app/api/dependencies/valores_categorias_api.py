@@ -18,6 +18,9 @@ from app.services.use_cases.crear_valor_categoria_parametro import (
 from app.services.use_cases.listar_valores_categoria_parametro import (
     ListarValoresCategoriaParametro,
 )
+from app.services.use_cases.listar_parametros_transporte import (
+    ListarParametrosTransporte,
+)
 
 
 @lru_cache
@@ -27,6 +30,13 @@ def obtener_repositorio_valores_categoria() -> InMemoryValoresCategoriaRepositor
 
 def obtener_caso_listar_valores_categoria() -> ListarValoresCategoriaParametro:
     return ListarValoresCategoriaParametro(
+        obtener_repositorio_categoria_parametro(),
+        obtener_repositorio_valores_categoria(),
+    )
+
+
+def obtener_caso_listar_parametros_transporte() -> ListarParametrosTransporte:
+    return ListarParametrosTransporte(
         obtener_repositorio_categoria_parametro(),
         obtener_repositorio_valores_categoria(),
     )

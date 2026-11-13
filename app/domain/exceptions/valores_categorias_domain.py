@@ -8,3 +8,7 @@ class ValorCategoriaDuplicadoError(Exception):
 
 class ValorCategoriaNoEncontradoError(Exception):
     """Se lanza cuando no existe el valor solicitado en la categoría."""
+
+
+class ValorCategoriaSistemaNoInactivableError(Exception):
+    """Se lanza cuando se intenta inactivar un valor del sistema."""
