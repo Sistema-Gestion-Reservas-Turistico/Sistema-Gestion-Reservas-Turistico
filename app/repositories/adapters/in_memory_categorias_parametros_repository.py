@@ -5,7 +5,7 @@ from app.domain.exceptions.categorias_parametros import (
     CategoriaParametroDuplicadaError,
     CategoriaParametroNoEncontradaError,
 )
-from app.domain.interfaces.categorias_parametros_repository import (
+from app.domain.interfaces.categorias_parametros_domain import (
     CategoriaParametroRepository,
 )
 

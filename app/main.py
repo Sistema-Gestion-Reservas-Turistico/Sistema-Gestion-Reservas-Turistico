@@ -20,6 +20,36 @@ async def manejar_error_validacion(
         return await request_validation_exception_handler(request, error)
 
     errores = error.errors()
+    if "/valores" in request.url.path:
+        if request.method == "PATCH":
+            mensaje = "El campo activo debe ser verdadero o falso"
+        elif request.method == "PUT" and any(
+            "codigo" in item.get("loc", ())
+            and item.get("type") == "extra_forbidden"
+            for item in errores
+        ):
+            mensaje = "El código de un valor no se puede modificar"
+        elif any(
+            "codigo" in item.get("loc", ()) and item.get("type") == "missing"
+            for item in errores
+        ):
+            mensaje = "El código es obligatorio"
+        elif any(
+            "nombre" in item.get("loc", ()) and item.get("type") == "missing"
+            for item in errores
+        ):
+            mensaje = "El nombre es obligatorio"
+        elif any("nombre" in item.get("loc", ()) for item in errores):
+            mensaje = "El nombre es obligatorio y debe tener máximo 100 caracteres"
+        elif any("orden" in item.get("loc", ()) for item in errores):
+            mensaje = "El orden debe ser un entero"
+        else:
+            mensaje = "Los datos del valor son inválidos"
+        return JSONResponse(
+            status_code=400,
+            content={"mensaje": mensaje, "data": None, "success": False},
+        )
+
     if request.method == "PUT" and any(
         "clave" in item.get("loc", ()) and item.get("type") == "extra_forbidden"
         for item in errores

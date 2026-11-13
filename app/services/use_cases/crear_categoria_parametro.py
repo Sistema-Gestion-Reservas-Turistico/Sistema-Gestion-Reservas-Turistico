@@ -1,5 +1,5 @@
 from app.domain.entities.categoria_parametro import CategoriaParametro
-from app.domain.interfaces.categorias_parametros_repository import (
+from app.domain.interfaces.categorias_parametros_domain import (
     CategoriaParametroRepository,
 )
 
