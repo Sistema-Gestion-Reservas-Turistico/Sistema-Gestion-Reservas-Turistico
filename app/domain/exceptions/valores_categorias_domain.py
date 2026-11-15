@@ -16,3 +16,7 @@ class ValorCategoriaSistemaNoInactivableError(Exception):
 
 class ValorCategoriaSistemaSoloEditableError(Exception):
     """Se lanza cuando se intenta cambiar el orden de un valor del sistema."""
+
+
+class ParametroNoVigenteError(Exception):
+    """Se lanza cuando el código no existe o su valor está inactivo."""
