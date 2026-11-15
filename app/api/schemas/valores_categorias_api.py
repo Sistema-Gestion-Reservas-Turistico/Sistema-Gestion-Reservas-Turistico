@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -77,3 +79,34 @@ class ValorCategoriaErrorResponse(BaseModel):
     mensaje: str
     data: None = None
     success: bool = False
+
+
+class ValorParametroPagoData(BaseModel):
+    id: int
+    codigo: str
+    nombre: str
+    orden: int
+    activo: bool
+    es_sistema: bool
+
+
+class CategoriaParametroPagoData(BaseModel):
+    clave: str
+    nombre: str
+    valores: list[ValorParametroPagoData]
+
+
+class ParametrosPagoData(BaseModel):
+    categorias: list[CategoriaParametroPagoData]
+
+
+class ParametrosPagoResponse(BaseModel):
+    mensaje: str
+    data: ParametrosPagoData
+    success: bool
+
+
+class ParametrosPagoErrorResponse(BaseModel):
+    mensaje: str
+    data: None = None
+    success: Literal[False] = False

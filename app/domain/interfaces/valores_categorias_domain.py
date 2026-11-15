@@ -4,6 +4,9 @@ from app.domain.entities.valor_categoria_parametro import ValorCategoriaParametr
 
 
 class ValoresCategoriaRepository(ABC):
+    def contar_activos(self, categoria: str) -> int:
+        return len(self.listar(categoria, activo=True))
+
     @abstractmethod
     def listar(
         self, categoria: str, activo: bool | None = None
