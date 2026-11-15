@@ -1,11 +1,13 @@
 from threading import RLock
 
 from app.domain.entities.valor_categoria_parametro import ValorCategoriaParametro
+from app.domain.exceptions.parametros_pagos import UltimoMetodoPagoActivoError
 from app.domain.exceptions.valores_categorias_domain import (
     ValorCategoriaDuplicadoError,
     ValorCategoriaNoEncontradoError,
 )
 from app.domain.interfaces.valores_categorias_domain import ValoresCategoriaRepository
+from app.domain.models.parametros_pagos import METODO_PAGO
 
 
 class InMemoryValoresCategoriaRepository(ValoresCategoriaRepository):
@@ -13,6 +15,15 @@ class InMemoryValoresCategoriaRepository(ValoresCategoriaRepository):
         self._valores: dict[int, ValorCategoriaParametro] = {}
         self._siguiente_id = 1
         self._lock = RLock()
+
+    def contar_activos(self, categoria: str) -> int:
+        with self._lock:
+            return sum(
+                1
+                for valor in self._valores.values()
+                if valor.categoria.casefold() == categoria.casefold()
+                and valor.activo
+            )
 
     def listar(
         self, categoria: str, activo: bool | None = None
@@ -102,6 +113,19 @@ class InMemoryValoresCategoriaRepository(ValoresCategoriaRepository):
             valor = self._valores.get(valor_id)
             if valor is None or valor.categoria.casefold() != categoria.casefold():
                 raise ValorCategoriaNoEncontradoError(valor_id)
+            if (
+                not activo
+                and valor.activo
+                and categoria.casefold() == METODO_PAGO.casefold()
+                and sum(
+                    1
+                    for existente in self._valores.values()
+                    if existente.categoria.casefold() == categoria.casefold()
+                    and existente.activo
+                )
+                <= 1
+            ):
+                raise UltimoMetodoPagoActivoError(valor_id)
 
             valor_actualizado = ValorCategoriaParametro(
                 id=valor.id,

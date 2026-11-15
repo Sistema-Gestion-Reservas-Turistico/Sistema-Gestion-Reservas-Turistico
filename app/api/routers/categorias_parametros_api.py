@@ -6,6 +6,7 @@ from app.api.dependencies.categorias_parametros import (
     obtener_caso_crear_categoria_parametro,
     obtener_repositorio_categoria_parametro,
 )
+from app.api.dependencies.autorizacion import autorizar_administrador
 from app.api.dependencies.valores_categorias_api import (
     obtener_caso_actualizar_estado_valor_categoria,
     obtener_caso_actualizar_valor_categoria,
@@ -34,11 +35,13 @@ from app.domain.exceptions.categorias_parametros import (
     CategoriaParametroDuplicadaError,
     CategoriaParametroNoEncontradaError,
 )
+from app.domain.exceptions.parametros_pagos import UltimoMetodoPagoActivoError
 from app.domain.exceptions.valores_categorias_domain import (
     CategoriaValorNoEncontradaError,
     ValorCategoriaDuplicadoError,
     ValorCategoriaNoEncontradoError,
     ValorCategoriaSistemaNoInactivableError,
+    ValorCategoriaSistemaSoloEditableError,
 )
 from app.services.use_cases.actualizar_categoria_parametro import (
     ActualizarCategoriaParametro,
@@ -81,11 +84,13 @@ def listar_categorias_parametros() -> CategoriasParametroResponse:
     responses={
         400: {"model": CategoriaParametroErrorResponse},
         409: {"model": CategoriaParametroErrorResponse},
+        403: {"model": CategoriaParametroErrorResponse},
     },
 )
 def crear_categoria_parametro(
     datos: CategoriaParametroCrear,
     caso: CrearCategoriaParametro = Depends(obtener_caso_crear_categoria_parametro),
+    _: None = Depends(autorizar_administrador),
 ) -> CategoriaParametroResponse | JSONResponse:
     try:
         categoria = caso.ejecutar(**datos.model_dump())
@@ -111,6 +116,7 @@ def crear_categoria_parametro(
     responses={
         400: {"model": CategoriaParametroErrorResponse},
         404: {"model": CategoriaParametroErrorResponse},
+        403: {"model": CategoriaParametroErrorResponse},
     },
 )
 def actualizar_categoria_parametro(
@@ -119,6 +125,7 @@ def actualizar_categoria_parametro(
     caso: ActualizarCategoriaParametro = Depends(
         obtener_caso_actualizar_categoria_parametro
     ),
+    _: None = Depends(autorizar_administrador),
 ) -> CategoriaParametroResponse | JSONResponse:
     if datos.nombre is None and datos.descripcion is None:
         return JSONResponse(
@@ -191,6 +198,7 @@ def listar_valores_categoria(
         400: {"model": ValorCategoriaErrorResponse},
         404: {"model": ValorCategoriaErrorResponse},
         409: {"model": ValorCategoriaErrorResponse},
+        403: {"model": ValorCategoriaErrorResponse},
     },
     summary="Crear un valor de categoría",
     description=(
@@ -203,6 +211,7 @@ def crear_valor_categoria(
     caso: CrearValorCategoriaParametro = Depends(
         obtener_caso_crear_valor_categoria
     ),
+    _: None = Depends(autorizar_administrador),
 ) -> ValorCategoriaResponse | JSONResponse:
     try:
         valor = caso.ejecutar(clave, **datos.model_dump())
@@ -237,9 +246,14 @@ def crear_valor_categoria(
     responses={
         400: {"model": ValorCategoriaErrorResponse},
         404: {"model": ValorCategoriaErrorResponse},
+        403: {"model": ValorCategoriaErrorResponse},
+        409: {"model": ValorCategoriaErrorResponse},
     },
     summary="Editar un valor de categoría",
-    description="Edita nombre, descripción u orden; el código no se puede modificar.",
+    description=(
+        "Edita nombre, descripción u orden; el código no se puede modificar. "
+        "Los valores de sistema solo permiten editar nombre y descripción."
+    ),
 )
 def actualizar_valor_categoria(
     clave: str,
@@ -248,6 +262,7 @@ def actualizar_valor_categoria(
     caso: ActualizarValorCategoriaParametro = Depends(
         obtener_caso_actualizar_valor_categoria
     ),
+    _: None = Depends(autorizar_administrador),
 ) -> ValorCategoriaResponse | JSONResponse:
     if not datos.model_fields_set:
         return JSONResponse(
@@ -284,6 +299,18 @@ def actualizar_valor_categoria(
                 "success": False,
             },
         )
+    except ValorCategoriaSistemaSoloEditableError:
+        return JSONResponse(
+            status_code=status.HTTP_409_CONFLICT,
+            content={
+                "mensaje": (
+                    "Los valores requeridos por el sistema solo permiten editar "
+                    "el nombre y la descripción"
+                ),
+                "data": None,
+                "success": False,
+            },
+        )
     return ValorCategoriaResponse(
         mensaje="Valor guardado correctamente",
         data=ValorCategoriaData.model_validate(valor),
@@ -298,6 +325,7 @@ def actualizar_valor_categoria(
         400: {"model": ValorCategoriaErrorResponse},
         404: {"model": ValorCategoriaErrorResponse},
         409: {"model": ValorCategoriaErrorResponse},
+        403: {"model": ValorCategoriaErrorResponse},
     },
     summary="Activar o inactivar un valor",
     description=(
@@ -312,6 +340,7 @@ def actualizar_estado_valor_categoria(
     caso: ActualizarEstadoValorCategoriaParametro = Depends(
         obtener_caso_actualizar_estado_valor_categoria
     ),
+    _: None = Depends(autorizar_administrador),
 ) -> ValorCategoriaEstadoResponse | JSONResponse:
     try:
         valor = caso.ejecutar(clave, id, datos.activo)
@@ -319,7 +348,18 @@ def actualizar_estado_valor_categoria(
         return JSONResponse(
             status_code=status.HTTP_409_CONFLICT,
             content={
-                "mensaje": "No se puede inactivar un valor protegido del sistema",
+                "mensaje": (
+                    "Este valor es requerido por el sistema y no se puede inactivar"
+                ),
+                "data": None,
+                "success": False,
+            },
+        )
+    except UltimoMetodoPagoActivoError:
+        return JSONResponse(
+            status_code=status.HTTP_409_CONFLICT,
+            content={
+                "mensaje": "Debe existir al menos un método de pago activo",
                 "data": None,
                 "success": False,
             },
@@ -343,4 +383,3 @@ def actualizar_estado_valor_categoria(
         ),
         success=True,
     )
-

@@ -1,6 +1,8 @@
 from app.domain.entities.valor_categoria_parametro import ValorCategoriaParametro
 from app.domain.exceptions.valores_categorias_domain import (
     CategoriaValorNoEncontradaError,
+    ValorCategoriaNoEncontradoError,
+    ValorCategoriaSistemaSoloEditableError,
 )
 from app.domain.interfaces.categorias_parametros_domain import (
     CategoriaParametroRepository,
@@ -35,6 +37,18 @@ class ActualizarValorCategoriaParametro:
         )
         if categoria is None:
             raise CategoriaValorNoEncontradaError(clave)
+        valor = next(
+            (
+                item
+                for item in self._valores.listar(categoria.clave)
+                if item.id == valor_id
+            ),
+            None,
+        )
+        if valor is None:
+            raise ValorCategoriaNoEncontradoError(valor_id)
+        if valor.es_sistema and orden is not None:
+            raise ValorCategoriaSistemaSoloEditableError(valor_id)
         return self._valores.actualizar(
             categoria.clave, valor_id, nombre, descripcion, orden
         )

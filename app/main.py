@@ -3,7 +3,9 @@ from collections.abc import AsyncIterator
 
 from fastapi import Body, FastAPI
 from fastapi.exception_handlers import request_validation_exception_handler
+from fastapi.exception_handlers import http_exception_handler
 from fastapi.exceptions import RequestValidationError
+from fastapi.exceptions import HTTPException
 from fastapi.requests import Request
 from fastapi.responses import JSONResponse
 
@@ -14,17 +16,37 @@ from app.api.routers.parametros_transporte_api import router as transporte_route
 from app.api.routers.categorias_parametros_api import (
     router as categorias_parametros_router,
 )
+from app.api.dependencies.parametros_pagos import (
+    obtener_caso_cargar_parametros_pagos,
+)
+from app.api.routers.parametros_pagos_api import router as pagos_router
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     obtener_caso_cargar_parametros_transporte().ejecutar()
+    obtener_caso_cargar_parametros_pagos().ejecutar()
     yield
 
 
 app = FastAPI(title="Sistema de Gestión de Reservas Turístico", lifespan=lifespan)
 app.include_router(categorias_parametros_router)
 app.include_router(transporte_router)
+app.include_router(pagos_router)
+
+
+@app.exception_handler(HTTPException)
+async def manejar_error_http(request: Request, error: HTTPException):
+    if error.status_code == 403:
+        return JSONResponse(
+            status_code=403,
+            content={
+                "mensaje": str(error.detail),
+                "data": None,
+                "success": False,
+            },
+        )
+    return await http_exception_handler(request, error)
 
 
 @app.exception_handler(RequestValidationError)

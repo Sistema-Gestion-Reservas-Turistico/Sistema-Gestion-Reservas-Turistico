@@ -12,3 +12,7 @@ class ValorCategoriaNoEncontradoError(Exception):
 
 class ValorCategoriaSistemaNoInactivableError(Exception):
     """Se lanza cuando se intenta inactivar un valor del sistema."""
+
+
+class ValorCategoriaSistemaSoloEditableError(Exception):
+    """Se lanza cuando se intenta cambiar el orden de un valor del sistema."""
