@@ -80,3 +80,20 @@ descripción. En `METODO_PAGO` siempre debe quedar al menos un valor activo. Las
 escrituras reutilizan los endpoints de HU-01B/HU-01C; no se agregan rutas de
 escritura para pagos. La consulta responde `503` si la persistencia reporta una
 indisponibilidad.
+
+## Consulta pÃºblica de parÃ¡metros (HU-05)
+
+Los mÃ³dulos pueden consultar valores vigentes sin sesiÃ³n ni rol:
+
+- `GET /api/v1/parametros/consulta/{categoria}` devuelve `data.categoria` y
+  `data.valores`, filtrados a valores activos y ordenados por `orden`.
+- `GET /api/v1/parametros/consulta/{categoria}/{codigo}` devuelve un valor
+  activo por categorÃ­a y cÃ³digo.
+
+La bÃºsqueda no distingue mayÃºsculas y minÃºsculas. Un valor inexistente o
+inactivo responde `404`; una categorÃ­a existente sin valores activos responde
+`200` con una lista vacÃ­a. Los cambios realizados mediante HU-01B/HU-01C se
+reflejan inmediatamente porque ambas consultas usan los mismos repositorios.
+Cuando el adaptador de persistencia reporte un error de base de datos, las
+consultas responden `503` con el mensaje `No fue posible consultar los
+parÃ¡metros`.

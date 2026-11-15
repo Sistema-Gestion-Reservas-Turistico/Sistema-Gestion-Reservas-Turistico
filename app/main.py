@@ -20,6 +20,7 @@ from app.api.dependencies.parametros_pagos import (
     obtener_caso_cargar_parametros_pagos,
 )
 from app.api.routers.parametros_pagos_api import router as pagos_router
+from app.api.routers.consulta_parametros_api import router as consulta_parametros_router
 
 
 @asynccontextmanager
@@ -33,6 +34,7 @@ app = FastAPI(title="Sistema de Gestión de Reservas Turístico", lifespan=lifes
 app.include_router(categorias_parametros_router)
 app.include_router(transporte_router)
 app.include_router(pagos_router)
+app.include_router(consulta_parametros_router)
 
 
 @app.exception_handler(HTTPException)

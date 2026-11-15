@@ -110,3 +110,41 @@ class ParametrosPagoErrorResponse(BaseModel):
     mensaje: str
     data: None = None
     success: Literal[False] = False
+
+
+class ParametroVigenteData(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    categoria: str
+    codigo: str
+    nombre: str
+    descripcion: str
+    orden: int
+
+
+class ParametroCategoriaItemData(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    codigo: str
+    nombre: str
+    descripcion: str
+    orden: int
+
+
+class ParametrosVigentesCategoriaData(BaseModel):
+    categoria: str
+    valores: list[ParametroCategoriaItemData]
+
+
+class ParametroVigenteResponse(BaseModel):
+    mensaje: str
+    data: ParametroVigenteData
+    success: bool
+
+
+class ParametrosVigentesCategoriaResponse(BaseModel):
+    mensaje: str
+    data: ParametrosVigentesCategoriaData
+    success: bool
