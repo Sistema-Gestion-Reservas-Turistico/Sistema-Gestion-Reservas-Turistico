@@ -7,6 +7,7 @@ from fastapi.exception_handlers import http_exception_handler
 from fastapi.exceptions import RequestValidationError
 from fastapi.exceptions import HTTPException
 from fastapi.requests import Request
+from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
 
 from app.api.dependencies.parametros_transporte import (
@@ -20,12 +21,19 @@ from app.api.dependencies.parametros_pagos import (
     obtener_caso_cargar_parametros_pagos,
 )
 from app.api.routers.parametros_pagos_api import router as pagos_router
+from app.api.dependencies.parametros_alojamiento_alimentacion import (
+    obtener_caso_cargar_parametros_alojamiento_alimentacion,
+)
+from app.api.routers.parametros_alojamiento_alimentacion_api import (
+    router as alojamiento_alimentacion_router,
+)
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     obtener_caso_cargar_parametros_transporte().ejecutar()
     obtener_caso_cargar_parametros_pagos().ejecutar()
+    obtener_caso_cargar_parametros_alojamiento_alimentacion().ejecutar()
     yield
 
 
@@ -33,6 +41,33 @@ app = FastAPI(title="Sistema de Gestión de Reservas Turístico", lifespan=lifes
 app.include_router(categorias_parametros_router)
 app.include_router(transporte_router)
 app.include_router(pagos_router)
+app.include_router(alojamiento_alimentacion_router)
+
+
+def generar_openapi():
+    if app.openapi_schema is not None:
+        return app.openapi_schema
+    esquema = get_openapi(
+        title=app.title,
+        version=app.version,
+        openapi_version=app.openapi_version,
+        description=app.description,
+        routes=app.routes,
+    )
+    ejemplos_error = (
+        esquema["paths"]["/api/v1/parametros/alojamiento-alimentacion"]["get"][
+            "responses"
+        ]
+    )
+    for codigo in ("403", "503"):
+        ejemplos = ejemplos_error[codigo]["content"]["application/json"]["examples"]
+        for ejemplo in ejemplos.values():
+            ejemplo["value"]["data"] = None
+    app.openapi_schema = esquema
+    return esquema
+
+
+app.openapi = generar_openapi
 
 
 @app.exception_handler(HTTPException)

@@ -1,7 +1,7 @@
 import sqlite3
 
+from app.domain.exceptions.persistencia import ErrorBaseDatos
 from app.domain.exceptions.parametros_pagos import (
-    ErrorBaseDatos,
     ParametrosPagoNoDisponiblesError,
 )
 from app.domain.interfaces.categorias_parametros_domain import (

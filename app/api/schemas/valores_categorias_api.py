@@ -110,3 +110,51 @@ class ParametrosPagoErrorResponse(BaseModel):
     mensaje: str
     data: None = None
     success: Literal[False] = False
+
+
+class ValorAlojamientoAlimentacionCrear(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    codigo: str = Field(min_length=1)
+    nombre: str = Field(min_length=1, max_length=100)
+    descripcion: str = ""
+    orden: int | None = Field(default=None, strict=True)
+
+
+class CategoriaAlojamientoAlimentacionCrear(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    clave: str = Field(min_length=1, max_length=50)
+    nombre: str = Field(min_length=1, max_length=100)
+    descripcion: str = ""
+
+
+class ValorAlojamientoAlimentacionData(BaseModel):
+    id: int
+    codigo: str
+    nombre: str
+    orden: int
+    activo: bool
+    es_sistema: bool
+
+
+class CategoriaAlojamientoAlimentacionData(BaseModel):
+    clave: str
+    nombre: str
+    valores: list[ValorAlojamientoAlimentacionData]
+
+
+class ParametrosAlojamientoAlimentacionData(BaseModel):
+    categorias: list[CategoriaAlojamientoAlimentacionData]
+
+
+class ParametrosAlojamientoAlimentacionResponse(BaseModel):
+    mensaje: str
+    data: ParametrosAlojamientoAlimentacionData
+    success: bool
+
+
+class ParametrosAlojamientoAlimentacionErrorResponse(BaseModel):
+    mensaje: str
+    data: None
+    success: Literal[False] = False
