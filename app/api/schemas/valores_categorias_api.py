@@ -112,6 +112,7 @@ class ParametrosPagoErrorResponse(BaseModel):
     success: Literal[False] = False
 
 
+<<<<<<< HEAD
 class ParametroVigenteData(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -148,3 +149,51 @@ class ParametrosVigentesCategoriaResponse(BaseModel):
     mensaje: str
     data: ParametrosVigentesCategoriaData
     success: bool
+=======
+class ValorAlojamientoAlimentacionCrear(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    codigo: str = Field(min_length=1)
+    nombre: str = Field(min_length=1, max_length=100)
+    descripcion: str = ""
+    orden: int | None = Field(default=None, strict=True)
+
+
+class CategoriaAlojamientoAlimentacionCrear(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    clave: str = Field(min_length=1, max_length=50)
+    nombre: str = Field(min_length=1, max_length=100)
+    descripcion: str = ""
+
+
+class ValorAlojamientoAlimentacionData(BaseModel):
+    id: int
+    codigo: str
+    nombre: str
+    orden: int
+    activo: bool
+    es_sistema: bool
+
+
+class CategoriaAlojamientoAlimentacionData(BaseModel):
+    clave: str
+    nombre: str
+    valores: list[ValorAlojamientoAlimentacionData]
+
+
+class ParametrosAlojamientoAlimentacionData(BaseModel):
+    categorias: list[CategoriaAlojamientoAlimentacionData]
+
+
+class ParametrosAlojamientoAlimentacionResponse(BaseModel):
+    mensaje: str
+    data: ParametrosAlojamientoAlimentacionData
+    success: bool
+
+
+class ParametrosAlojamientoAlimentacionErrorResponse(BaseModel):
+    mensaje: str
+    data: None
+    success: Literal[False] = False
+>>>>>>> 6879a88 (feat: implementacion HU-04 administrar parametros de alojamiento y alimentacion)

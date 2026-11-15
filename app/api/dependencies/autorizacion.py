@@ -11,5 +11,5 @@ def autorizar_administrador(
     if rol != "Administrador":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Solo el rol Administrador puede realizar operaciones de escritura",
+            detail="No tiene permisos para realizar esta acción",
         )

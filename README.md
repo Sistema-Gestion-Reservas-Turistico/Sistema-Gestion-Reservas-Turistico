@@ -68,6 +68,19 @@ camioneta, minibús y autobús; disponible, en mantenimiento y fuera de servicio
 La carga es idempotente y los valores iniciales del sistema no se pueden
 inactivar: HU-01C responde `409` si se solicita ese cambio.
 
+## Parámetros de alojamiento y alimentación (HU-04)
+
+`GET /api/v1/parametros/alojamiento-alimentacion` agrupa
+`TIPO_HABITACION`, `TIPO_ALIMENTACION` y `RESTRICCION_ALIMENTARIA`; la consulta
+administrativa incluye valores activos e inactivos. Al iniciar FastAPI se
+cargan de forma idempotente los valores iniciales SENCILLA, FAMILIAR, DESAYUNO
+y VEGETARIANA, todos activos y no protegidos como valores de sistema. Estos
+valores pueden inactivarse sin restricción de último valor activo, y las
+consultas de uso pueden filtrar activos con `?activo=true` en el listado
+existente por categoría. Los registros inactivos se conservan para mantener
+referencias históricas. Las escrituras reutilizan HU-01B/HU-01C; no se agregan
+rutas nuevas de escritura.
+
 ## Parámetros de pagos (HU-03)
 
 `GET /api/v1/parametros/pagos` devuelve las categorías `METODO_PAGO` y
