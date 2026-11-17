@@ -1,7 +1,7 @@
 import sqlite3
 
 from app.domain.entities.valor_categoria_parametro import ValorCategoriaParametro
-from app.domain.exceptions.parametros_pagos import ErrorBaseDatos
+from app.domain.exceptions.persistencia import ErrorBaseDatos
 from app.domain.exceptions.valores_categorias_domain import (
     CategoriaValorNoEncontradaError,
     ParametroNoVigenteError,

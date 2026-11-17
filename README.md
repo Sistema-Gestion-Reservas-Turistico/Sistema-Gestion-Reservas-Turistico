@@ -110,3 +110,19 @@ reflejan inmediatamente porque ambas consultas usan los mismos repositorios.
 Cuando el adaptador de persistencia reporte un error de base de datos, las
 consultas responden `503` con el mensaje `No fue posible consultar los
 parÃ¡metros`.
+
+## Registro de usuarios (HU-06)
+
+`POST /api/v1/usuarios/registro` es una ruta pública que crea cuentas con rol
+`Cliente` y estado `PENDIENTE_ACTIVACION`. El correo se normaliza a minúsculas
+y tanto el correo como la combinación de tipo y número de documento son únicos.
+La contraseña exige ocho caracteres como mínimo, mayúscula, minúscula y número;
+se almacena con PBKDF2-HMAC-SHA256 y salt aleatorio. El registro requiere aceptar
+el tratamiento de datos y guarda la fecha de aceptación. El teléfono es opcional
+y los campos adicionales del cuerpo, incluido `rol`, se ignoran.
+
+Al iniciar la aplicación se carga idempotentemente la categoría
+`TIPO_DOCUMENTO` y los valores activos `CC`, `CE` y `PASAPORTE`, compartidos
+con la consulta pública de parámetros de HU-05. Las validaciones responden
+`400`, las duplicidades `409` y los fallos de persistencia `503`. Los datos de
+usuarios se mantienen en memoria y se pierden al reiniciar la aplicación.

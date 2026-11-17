@@ -112,7 +112,6 @@ class ParametrosPagoErrorResponse(BaseModel):
     success: Literal[False] = False
 
 
-<<<<<<< HEAD
 class ParametroVigenteData(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -149,7 +148,8 @@ class ParametrosVigentesCategoriaResponse(BaseModel):
     mensaje: str
     data: ParametrosVigentesCategoriaData
     success: bool
-=======
+
+
 class ValorAlojamientoAlimentacionCrear(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -196,4 +196,3 @@ class ParametrosAlojamientoAlimentacionErrorResponse(BaseModel):
     mensaje: str
     data: None
     success: Literal[False] = False
->>>>>>> 6879a88 (feat: implementacion HU-04 administrar parametros de alojamiento y alimentacion)

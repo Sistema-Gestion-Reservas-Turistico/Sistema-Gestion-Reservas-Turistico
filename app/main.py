@@ -21,16 +21,15 @@ from app.api.dependencies.parametros_pagos import (
     obtener_caso_cargar_parametros_pagos,
 )
 from app.api.routers.parametros_pagos_api import router as pagos_router
-<<<<<<< HEAD
 from app.api.routers.consulta_parametros_api import router as consulta_parametros_router
-=======
 from app.api.dependencies.parametros_alojamiento_alimentacion import (
     obtener_caso_cargar_parametros_alojamiento_alimentacion,
 )
 from app.api.routers.parametros_alojamiento_alimentacion_api import (
     router as alojamiento_alimentacion_router,
 )
->>>>>>> 6879a88 (feat: implementacion HU-04 administrar parametros de alojamiento y alimentacion)
+from app.api.dependencies.usuarios import obtener_caso_cargar_parametros_usuarios
+from app.api.routers.usuarios_api import router as usuarios_router
 
 
 @asynccontextmanager
@@ -38,6 +37,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     obtener_caso_cargar_parametros_transporte().ejecutar()
     obtener_caso_cargar_parametros_pagos().ejecutar()
     obtener_caso_cargar_parametros_alojamiento_alimentacion().ejecutar()
+    obtener_caso_cargar_parametros_usuarios().ejecutar()
     yield
 
 
@@ -45,10 +45,9 @@ app = FastAPI(title="Sistema de Gestión de Reservas Turístico", lifespan=lifes
 app.include_router(categorias_parametros_router)
 app.include_router(transporte_router)
 app.include_router(pagos_router)
-<<<<<<< HEAD
 app.include_router(consulta_parametros_router)
-=======
 app.include_router(alojamiento_alimentacion_router)
+app.include_router(usuarios_router)
 
 
 def generar_openapi():
@@ -60,6 +59,9 @@ def generar_openapi():
         openapi_version=app.openapi_version,
         description=app.description,
         routes=app.routes,
+    )
+    esquema["paths"]["/api/v1/usuarios/registro"]["post"]["responses"].pop(
+        "422", None
     )
     ejemplos_error = (
         esquema["paths"]["/api/v1/parametros/alojamiento-alimentacion"]["get"][
@@ -75,7 +77,6 @@ def generar_openapi():
 
 
 app.openapi = generar_openapi
->>>>>>> 6879a88 (feat: implementacion HU-04 administrar parametros de alojamiento y alimentacion)
 
 
 @app.exception_handler(HTTPException)
@@ -96,6 +97,31 @@ async def manejar_error_http(request: Request, error: HTTPException):
 async def manejar_error_validacion(
     request: Request, error: RequestValidationError
 ):
+    if request.url.path == "/api/v1/usuarios/registro":
+        errores = []
+        for item in error.errors():
+            ubicacion = item.get("loc", ())
+            campo = next(
+                (
+                    parte
+                    for parte in reversed(ubicacion)
+                    if isinstance(parte, str) and parte not in {"body", "query"}
+                ),
+                "body",
+            )
+            detalle = str(item.get("msg", "Dato inválido"))
+            if detalle.startswith("Value error, "):
+                detalle = detalle.removeprefix("Value error, ")
+            errores.append({"campo": campo, "detalle": detalle})
+        return JSONResponse(
+            status_code=400,
+            content={
+                "mensaje": "Los datos de registro no son válidos",
+                "data": {"errores": errores},
+                "success": False,
+            },
+        )
+
     if not request.url.path.startswith("/api/v1/parametros/categorias"):
         return await request_validation_exception_handler(request, error)
 
