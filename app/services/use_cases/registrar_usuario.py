@@ -1,6 +1,4 @@
-import hashlib
 import re
-import secrets
 from datetime import datetime, timezone
 
 from app.domain.entities.usuario import Usuario
@@ -21,6 +19,7 @@ from app.domain.models.usuarios import (
     UsuarioRegistroCreate,
     UsuarioRegistroResponse,
 )
+from app.services.security.passwords import hash_password
 
 
 _EMAIL_RE: re.Pattern[str] = re.compile(
@@ -28,7 +27,6 @@ _EMAIL_RE: re.Pattern[str] = re.compile(
     r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?"
     r"(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$"
 )
-_PASSWORD_ITERATIONS: int = 600_000
 
 
 class RegistrarUsuarioUseCase:
@@ -81,7 +79,7 @@ class RegistrarUsuarioUseCase:
             apellidos=datos.apellidos.strip(),
             correo=correo_normalizado,
             telefono=datos.telefono.strip() if datos.telefono else None,
-            password_hash=_hash_password(datos.password),
+            password_hash=hash_password(datos.password),
             rol=ROL_CLIENTE,
             estado=ESTADO_PENDIENTE_ACTIVACION,
             acepta_tratamiento_datos=True,
@@ -165,14 +163,3 @@ class RegistrarUsuarioUseCase:
                 )
             )
         return errores
-
-
-def _hash_password(password: str) -> str:
-    salt = secrets.token_bytes(16)
-    derived_key = hashlib.pbkdf2_hmac(
-        "sha256", password.encode("utf-8"), salt, _PASSWORD_ITERATIONS
-    )
-    return (
-        f"pbkdf2_sha256${_PASSWORD_ITERATIONS}"
-        f"${salt.hex()}${derived_key.hex()}"
-    )

@@ -30,6 +30,7 @@ from app.api.routers.parametros_alojamiento_alimentacion_api import (
 )
 from app.api.dependencies.usuarios import obtener_caso_cargar_parametros_usuarios
 from app.api.routers.usuarios_api import router as usuarios_router
+from app.api.routers.auth_api import router as auth_router
 
 
 @asynccontextmanager
@@ -48,6 +49,7 @@ app.include_router(pagos_router)
 app.include_router(consulta_parametros_router)
 app.include_router(alojamiento_alimentacion_router)
 app.include_router(usuarios_router)
+app.include_router(auth_router)
 
 
 def generar_openapi():

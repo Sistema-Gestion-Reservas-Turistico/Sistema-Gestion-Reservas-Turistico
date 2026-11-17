@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 
 
@@ -11,7 +11,7 @@ class Usuario:
     apellidos: str
     correo: str
     telefono: str | None
-    password_hash: str
+    password_hash: str = field(repr=False)
     rol: str
     estado: str
     acepta_tratamiento_datos: bool

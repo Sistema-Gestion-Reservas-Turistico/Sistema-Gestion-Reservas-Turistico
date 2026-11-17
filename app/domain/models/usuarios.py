@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from dataclasses import dataclass, field
 
 
@@ -32,4 +31,3 @@ class UsuarioRegistroResponse:
 class ErrorCampoItem:
     campo: str
     detalle: str
-
