@@ -1,7 +1,19 @@
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 
-from app.api.dependencies.usuarios import obtener_caso_registrar_usuario
+from app.api.dependencies.usuarios import (
+    obtener_caso_activar_cuenta,
+    obtener_caso_registrar_usuario,
+    obtener_caso_reenviar_activacion,
+)
+from app.api.schemas.activacion import (
+    ActivacionErrorResponse,
+    ActivarCuentaData,
+    ActivarCuentaRequestSchema,
+    ActivarCuentaResponseSchema,
+    ReenviarActivacionRequestSchema,
+    ReenviarActivacionResponseSchema,
+)
 from app.api.schemas.usuarios import (
     ErrorRegistroResponse,
     UsuarioRegistroData,
@@ -14,6 +26,20 @@ from app.domain.exceptions.usuarios import (
     DocumentoDuplicadoError,
     PersistenciaUsuariosError,
     TratamientoDatosNoAceptadoError,
+)
+from app.domain.exceptions.activacion import (
+    CuentaYaActivaError,
+    LimiteReenviosActivacionError,
+    PersistenciaActivacionError,
+    TokenActivacionInvalidoError,
+    TokenActivacionVencidoError,
+)
+from app.domain.models.activacion import ReenviarActivacionRequest
+from app.services.use_cases.activar_cuenta_por_token import (
+    ActivarCuentaPorTokenUseCase,
+)
+from app.services.use_cases.reenviar_activacion_cuenta import (
+    ReenviarActivacionCuentaUseCase,
 )
 from app.services.use_cases.registrar_usuario import RegistrarUsuarioUseCase
 
@@ -201,4 +227,214 @@ def _error(
     return JSONResponse(
         status_code=codigo,
         content={"mensaje": mensaje, "data": data, "success": False},
+    )
+
+
+@router.post(
+    "/activacion",
+    status_code=status.HTTP_200_OK,
+    response_model=ActivarCuentaResponseSchema,
+    responses={
+        status.HTTP_200_OK: {
+            "model": ActivarCuentaResponseSchema,
+            "description": "La cuenta fue activada.",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "mensaje": "Cuenta activada correctamente",
+                        "data": {
+                            "id": 101,
+                            "correo": "laura.gomez@correo.com",
+                            "estado": "ACTIVA",
+                        },
+                        "success": True,
+                    }
+                }
+            },
+        },
+        status.HTTP_400_BAD_REQUEST: {
+            "model": ActivacionErrorResponse,
+            "description": "El enlace de activación no existe o fue invalidado.",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "mensaje": "El enlace de activación no es válido",
+                        "data": None,
+                        "success": False,
+                    }
+                }
+            },
+        },
+        status.HTTP_409_CONFLICT: {
+            "model": ActivacionErrorResponse,
+            "description": "La cuenta ya fue activada.",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "mensaje": "La cuenta ya está activa",
+                        "data": None,
+                        "success": False,
+                    }
+                }
+            },
+        },
+        status.HTTP_410_GONE: {
+            "model": ActivacionErrorResponse,
+            "description": "El enlace de activación venció.",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "mensaje": "El enlace de activación venció. Solicita uno nuevo",
+                        "data": None,
+                        "success": False,
+                    }
+                }
+            },
+        },
+        status.HTTP_503_SERVICE_UNAVAILABLE: {
+            "model": ActivacionErrorResponse,
+            "description": "No fue posible consultar o actualizar la cuenta.",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "mensaje": "No fue posible procesar la activación",
+                        "data": None,
+                        "success": False,
+                    }
+                }
+            },
+        },
+    },
+    summary="Activar una cuenta con el enlace enviado por correo",
+    description=(
+        "Consume un token de un solo uso enviado por correo. El registro y el "
+        "reenvío construyen el enlace como "
+        "`{FRONTEND_URL}/activar-cuenta?token={token}`; el token original no se "
+        "almacena. Los tokens vencen según HORAS_VIGENCIA_TOKEN_ACTIVACION "
+        "(24 horas por defecto)."
+    ),
+)
+def activar_cuenta(
+    solicitud: ActivarCuentaRequestSchema,
+    caso: ActivarCuentaPorTokenUseCase = Depends(obtener_caso_activar_cuenta),
+) -> ActivarCuentaResponseSchema | JSONResponse:
+    try:
+        cuenta = caso.ejecutar(solicitud.to_domain())
+    except TokenActivacionInvalidoError:
+        return _error_activacion(
+            status.HTTP_400_BAD_REQUEST, "El enlace de activación no es válido"
+        )
+    except CuentaYaActivaError:
+        return _error_activacion(status.HTTP_409_CONFLICT, "La cuenta ya está activa")
+    except TokenActivacionVencidoError:
+        return _error_activacion(
+            status.HTTP_410_GONE,
+            "El enlace de activación venció. Solicita uno nuevo",
+        )
+    except PersistenciaActivacionError:
+        return _error_activacion(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            "No fue posible procesar la activación",
+        )
+
+    return ActivarCuentaResponseSchema(
+        mensaje="Cuenta activada correctamente",
+        data=ActivarCuentaData(
+            id=cuenta.id,
+            correo=cuenta.correo,
+            estado=cuenta.estado,
+        ),
+        success=True,
+    )
+
+
+@router.post(
+    "/activacion/reenviar",
+    status_code=status.HTTP_200_OK,
+    response_model=ReenviarActivacionResponseSchema,
+    responses={
+        status.HTTP_200_OK: {
+            "model": ReenviarActivacionResponseSchema,
+            "description": (
+                "Respuesta idéntica exista o no una cuenta pendiente para el correo."
+            ),
+            "content": {
+                "application/json": {
+                    "example": {
+                        "mensaje": (
+                            "Si el correo corresponde a una cuenta pendiente, "
+                            "enviaremos un nuevo enlace"
+                        ),
+                        "data": None,
+                        "success": True,
+                    }
+                }
+            },
+        },
+        status.HTTP_429_TOO_MANY_REQUESTS: {
+            "model": ActivacionErrorResponse,
+            "description": "Se alcanzó el límite horario de reenvíos.",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "mensaje": "Demasiadas solicitudes. Intenta de nuevo más tarde",
+                        "data": None,
+                        "success": False,
+                    }
+                }
+            },
+        },
+        status.HTTP_503_SERVICE_UNAVAILABLE: {
+            "model": ActivacionErrorResponse,
+            "description": "No fue posible consultar o guardar la solicitud.",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "mensaje": "No fue posible procesar la activación",
+                        "data": None,
+                        "success": False,
+                    }
+                }
+            },
+        },
+    },
+    summary="Reenviar el enlace de activación",
+    description=(
+        "Solicita un enlace nuevo para una cuenta pendiente. Por privacidad, "
+        "la respuesta es idéntica cuando el correo no existe o la cuenta ya "
+        "está activa. El límite es MAX_REENVIOS_ACTIVACION_POR_HORA (3 por "
+        "correo en una hora, por defecto)."
+    ),
+)
+def reenviar_activacion(
+    solicitud: ReenviarActivacionRequestSchema,
+    caso: ReenviarActivacionCuentaUseCase = Depends(
+        obtener_caso_reenviar_activacion
+    ),
+) -> ReenviarActivacionResponseSchema | JSONResponse:
+    try:
+        resultado = caso.ejecutar(
+            ReenviarActivacionRequest(correo=str(solicitud.correo))
+        )
+    except LimiteReenviosActivacionError:
+        return _error_activacion(
+            status.HTTP_429_TOO_MANY_REQUESTS,
+            "Demasiadas solicitudes. Intenta de nuevo más tarde",
+        )
+    except PersistenciaActivacionError:
+        return _error_activacion(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            "No fue posible procesar la activación",
+        )
+    return ReenviarActivacionResponseSchema(
+        mensaje=resultado.mensaje,
+        data=None,
+        success=True,
+    )
+
+
+def _error_activacion(codigo: int, mensaje: str) -> JSONResponse:
+    return JSONResponse(
+        status_code=codigo,
+        content={"mensaje": mensaje, "data": None, "success": False},
     )

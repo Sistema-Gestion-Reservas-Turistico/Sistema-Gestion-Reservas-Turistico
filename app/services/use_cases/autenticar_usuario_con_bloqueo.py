@@ -67,7 +67,7 @@ class AutenticarUsuarioConBloqueoUseCase:
 
         estado = self._registrar_login_exitoso(correo, momento, ip_origen)
         self._rechazar_si_bloqueado(estado, momento)
-        if usuario.estado != "ACTIVO":
+        if usuario.estado not in {"ACTIVO", "ACTIVA"}:
             raise CuentaPendienteActivacionError()
 
         return LoginExitosoResponse(
