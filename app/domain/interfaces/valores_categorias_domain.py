@@ -1,0 +1,46 @@
+from abc import ABC, abstractmethod
+
+from app.domain.entities.valor_categoria_parametro import ValorCategoriaParametro
+
+
+class ValoresCategoriaRepository(ABC):
+    def listar_activos(self, categoria: str) -> list[ValorCategoriaParametro]:
+        return self.listar(categoria, activo=True)
+
+    def contar_activos(self, categoria: str) -> int:
+        return len(self.listar(categoria, activo=True))
+
+    @abstractmethod
+    def listar(
+        self, categoria: str, activo: bool | None = None
+    ) -> list[ValorCategoriaParametro]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def crear(
+        self,
+        categoria: str,
+        codigo: str,
+        nombre: str,
+        descripcion: str,
+        orden: int | None,
+        es_sistema: bool = False,
+    ) -> ValorCategoriaParametro:
+        raise NotImplementedError
+
+    @abstractmethod
+    def actualizar(
+        self,
+        categoria: str,
+        valor_id: int,
+        nombre: str | None,
+        descripcion: str | None,
+        orden: int | None,
+    ) -> ValorCategoriaParametro:
+        raise NotImplementedError
+
+    @abstractmethod
+    def actualizar_estado(
+        self, categoria: str, valor_id: int, activo: bool
+    ) -> ValorCategoriaParametro:
+        raise NotImplementedError
