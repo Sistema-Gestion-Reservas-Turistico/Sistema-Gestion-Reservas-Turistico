@@ -143,3 +143,19 @@ El correo `cliente.activo@correo.com` con contraseña `Viaje2026` se carga como
 cuenta de prueba activa al iniciar la aplicación. El adaptador de notificaciones
 en memoria permite inspeccionar avisos de bloqueo y simular fallos de envío;
 el bloqueo se conserva aunque el envío del aviso falle.
+
+## Activación de cuentas por correo (HU-08)
+
+Al registrar una cuenta, `POST /api/v1/usuarios/registro` genera un token
+aleatorio de un solo uso y envía el enlace
+`{FRONTEND_URL}/activar-cuenta?token={token}`. Solo se almacena el hash SHA-256
+del token. La vigencia predeterminada es de 24 horas
+(`HORAS_VIGENCIA_TOKEN_ACTIVACION`); un fallo de correo no cancela el registro.
+
+`POST /api/v1/usuarios/activacion` consume el token y activa la cuenta con
+estado `ACTIVA`. Los enlaces vencidos responden `410`, los ya consumidos `409`
+y los inválidos o reemplazados `400`. `POST /api/v1/usuarios/activacion/reenviar`
+genera un token nuevo para cuentas
+pendientes, invalida enlaces anteriores y responde igual para correos
+desconocidos o cuentas ya activas. Se permiten hasta tres solicitudes por
+correo por hora (`MAX_REENVIOS_ACTIVACION_POR_HORA`).

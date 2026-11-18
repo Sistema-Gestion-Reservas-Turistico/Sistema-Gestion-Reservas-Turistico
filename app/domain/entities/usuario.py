@@ -19,3 +19,4 @@ class Usuario:
     intentos_fallidos: int
     bloqueado_hasta: datetime | None
     creado_en: datetime
+    fecha_activacion: datetime | None = None

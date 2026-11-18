@@ -1,4 +1,5 @@
 from dataclasses import replace
+from datetime import datetime
 from threading import Lock
 
 from app.domain.entities.usuario import Usuario
@@ -51,3 +52,18 @@ class InMemoryUsuarioRepository(UsuarioRepository):
     def buscar_por_id(self, usuario_id: int) -> Usuario | None:
         with self._lock:
             return self._usuarios.get(usuario_id)
+
+    def activar(
+        self, usuario_id: int, fecha_activacion: datetime
+    ) -> Usuario | None:
+        with self._lock:
+            usuario = self._usuarios.get(usuario_id)
+            if usuario is None:
+                return None
+            usuario_actualizado = replace(
+                usuario,
+                estado="ACTIVA",
+                fecha_activacion=fecha_activacion,
+            )
+            self._usuarios[usuario_id] = usuario_actualizado
+            return usuario_actualizado

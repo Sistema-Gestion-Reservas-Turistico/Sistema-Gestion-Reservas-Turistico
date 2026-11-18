@@ -1,3 +1,4 @@
+import logging
 import re
 from datetime import datetime, timezone
 
@@ -10,6 +11,8 @@ from app.domain.exceptions.usuarios import (
     TratamientoDatosNoAceptadoError,
 )
 from app.domain.interfaces.usuarios import UsuarioRepository
+from app.domain.interfaces.notificacion_correo import NotificacionCorreoService
+from app.domain.interfaces.token_activacion import TokenActivacionRepository
 from app.domain.interfaces.valores_categorias_domain import ValoresCategoriaRepository
 from app.domain.models.usuarios import (
     ESTADO_PENDIENTE_ACTIVACION,
@@ -20,6 +23,7 @@ from app.domain.models.usuarios import (
     UsuarioRegistroResponse,
 )
 from app.services.security.passwords import hash_password
+from app.services.use_cases.activacion_utils import crear_y_enviar_token_activacion
 
 
 _EMAIL_RE: re.Pattern[str] = re.compile(
@@ -27,6 +31,7 @@ _EMAIL_RE: re.Pattern[str] = re.compile(
     r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?"
     r"(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$"
 )
+_logger = logging.getLogger(__name__)
 
 
 class RegistrarUsuarioUseCase:
@@ -34,9 +39,13 @@ class RegistrarUsuarioUseCase:
         self,
         usuarios: UsuarioRepository,
         valores_categoria: ValoresCategoriaRepository,
+        tokens_activacion: TokenActivacionRepository,
+        notificaciones: NotificacionCorreoService,
     ) -> None:
         self._usuarios = usuarios
         self._valores_categoria = valores_categoria
+        self._tokens_activacion = tokens_activacion
+        self._notificaciones = notificaciones
 
     def ejecutar(self, datos: UsuarioRegistroCreate) -> UsuarioRegistroResponse:
         if datos.acepta_tratamiento_datos is not True:
@@ -94,6 +103,20 @@ class RegistrarUsuarioUseCase:
         except (CorreoDuplicadoError, DocumentoDuplicadoError):
             raise
         except Exception as error:
+            raise PersistenciaUsuariosError() from error
+
+        try:
+            crear_y_enviar_token_activacion(
+                usuario_guardado,
+                self._tokens_activacion,
+                self._notificaciones,
+                ahora,
+            )
+        except Exception as error:
+            _logger.exception(
+                "No fue posible preparar la activación de la cuenta %s",
+                usuario_guardado.correo,
+            )
             raise PersistenciaUsuariosError() from error
 
         return UsuarioRegistroResponse(
