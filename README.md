@@ -110,3 +110,36 @@ reflejan inmediatamente porque ambas consultas usan los mismos repositorios.
 Cuando el adaptador de persistencia reporte un error de base de datos, las
 consultas responden `503` con el mensaje `No fue posible consultar los
 parÃ¡metros`.
+
+## Registro de usuarios (HU-06)
+
+`POST /api/v1/usuarios/registro` es una ruta pública que crea cuentas con rol
+`Cliente` y estado `PENDIENTE_ACTIVACION`. El correo se normaliza a minúsculas
+y tanto el correo como la combinación de tipo y número de documento son únicos.
+La contraseña exige ocho caracteres como mínimo, mayúscula, minúscula y número;
+se almacena con PBKDF2-HMAC-SHA256 y salt aleatorio. El registro requiere aceptar
+el tratamiento de datos y guarda la fecha de aceptación. El teléfono es opcional
+y los campos adicionales del cuerpo, incluido `rol`, se ignoran.
+
+Al iniciar la aplicación se carga idempotentemente la categoría
+`TIPO_DOCUMENTO` y los valores activos `CC`, `CE` y `PASAPORTE`, compartidos
+con la consulta pública de parámetros de HU-05. Las validaciones responden
+`400`, las duplicidades `409` y los fallos de persistencia `503`. Los datos de
+usuarios se mantienen en memoria y se pierden al reiniciar la aplicación.
+
+## Bloqueo de cuenta por intentos fallidos (HU-07)
+
+`POST /api/v1/auth/login` verifica las credenciales de una cuenta activa y
+mantiene el estado de intentos y la auditoría en repositorios separados por
+correo normalizado, incluso si no existe un usuario para ese correo. Los
+valores predeterminados son `MAX_INTENTOS_FALLIDOS_LOGIN=5` y
+`MINUTOS_BLOQUEO_LOGIN=15`; se pueden configurar como variables de entorno.
+Una vez alcanzado el máximo, responde `423` durante el periodo de bloqueo,
+independientemente de que la contraseña posterior sea correcta. Las
+credenciales incorrectas responden `401` con los intentos restantes y los
+errores de persistencia `503`.
+
+El correo `cliente.activo@correo.com` con contraseña `Viaje2026` se carga como
+cuenta de prueba activa al iniciar la aplicación. El adaptador de notificaciones
+en memoria permite inspeccionar avisos de bloqueo y simular fallos de envío;
+el bloqueo se conserva aunque el envío del aviso falle.
