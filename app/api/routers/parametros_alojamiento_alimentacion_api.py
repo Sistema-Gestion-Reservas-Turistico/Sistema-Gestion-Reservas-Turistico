@@ -4,6 +4,7 @@ from fastapi.responses import JSONResponse
 from app.api.dependencies.parametros_alojamiento_alimentacion import (
     obtener_caso_listar_parametros_alojamiento_alimentacion,
 )
+from app.api.dependencies.autorizacion import autorizar_administrador
 from app.api.schemas.valores_categorias_api import (
     CategoriaAlojamientoAlimentacionData,
     ParametrosAlojamientoAlimentacionData,
@@ -138,6 +139,7 @@ def listar_parametros_alojamiento_alimentacion(
     caso: ListarParametrosAlojamientoAlimentacion = Depends(
         obtener_caso_listar_parametros_alojamiento_alimentacion
     ),
+    _: None = Depends(autorizar_administrador),
 ) -> ParametrosAlojamientoAlimentacionResponse | JSONResponse:
     try:
         parametros = caso.ejecutar()
