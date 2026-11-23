@@ -1,7 +1,7 @@
 from datetime import timedelta, timezone
 
 from fastapi import APIRouter, Depends, Request, status
-from fastapi.responses import JSONResponse
+from app.api.responses import JSONResponse
 
 from app.api.dependencies.usuarios import obtener_caso_autenticar_usuario
 from app.api.schemas.autenticacion import (
@@ -131,14 +131,13 @@ def iniciar_sesion(
     except CredencialesInvalidasLoginError as error:
         return _error(
             status.HTTP_401_UNAUTHORIZED,
-            "Correo o contraseña incorrectos",
+            "The email or password is incorrect",
             {"intentos_restantes": error.intentos_restantes},
         )
     except CuentaBloqueadaTemporalmenteError as error:
         mensaje = (
-            "El inicio de sesión con este correo está bloqueado temporalmente por "
-            "varios intentos fallidos. Intenta de nuevo en "
-            f"{error.minutos_restantes} minutos"
+            "Login for this email is temporarily locked after multiple failed "
+            f"attempts. Try again in {error.minutos_restantes} minutes"
         )
         return _error(
             status.HTTP_423_LOCKED,
@@ -150,16 +149,19 @@ def iniciar_sesion(
                 "minutos_restantes": error.minutos_restantes,
             },
         )
-    except CuentaPendienteActivacionError as error:
-        return _error(status.HTTP_403_FORBIDDEN, str(error))
+    except CuentaPendienteActivacionError:
+        return _error(
+            status.HTTP_403_FORBIDDEN,
+            "The account has not been activated",
+        )
     except PersistenciaSeguridadLoginError:
         return _error(
             status.HTTP_503_SERVICE_UNAVAILABLE,
-            "No fue posible iniciar sesión",
+            "Unable to sign in at this time",
         )
 
     return LoginExitosoResponse(
-        mensaje="Inicio de sesión exitoso",
+        message="Login successful",
         data=LoginExitosoData(
             id=usuario.id,
             nombres=usuario.nombres,

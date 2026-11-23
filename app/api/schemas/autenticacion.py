@@ -1,5 +1,7 @@
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.api.responses import ApiErrorResponse, ApiResponse
+
 from app.domain.models.autenticacion import LoginRequest
 
 
@@ -21,10 +23,8 @@ class LoginExitosoData(BaseModel):
     rol: str
 
 
-class LoginExitosoResponse(BaseModel):
-    mensaje: str
-    data: LoginExitosoData
-    success: bool
+class LoginExitosoResponse(ApiResponse[LoginExitosoData]):
+    pass
 
 
 class LoginErrorCredencialesData(BaseModel):
@@ -36,10 +36,8 @@ class LoginBloqueadoData(BaseModel):
     minutos_restantes: int
 
 
-class LoginErrorResponse(BaseModel):
-    mensaje: str
-    data: LoginErrorCredencialesData | LoginBloqueadoData | None = None
-    success: bool = False
+class LoginErrorResponse(ApiErrorResponse):
+    pass
 
 
 class LoginErrorCredencialesResponse(LoginErrorResponse):
