@@ -1,5 +1,7 @@
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
+from app.api.responses import ApiErrorResponse, ApiResponse
+
 from app.domain.models.activacion import ActivarCuentaRequest
 
 
@@ -24,19 +26,13 @@ class ActivarCuentaData(BaseModel):
     estado: str
 
 
-class ActivarCuentaResponseSchema(BaseModel):
-    mensaje: str
-    data: ActivarCuentaData
-    success: bool
+class ActivarCuentaResponseSchema(ApiResponse[ActivarCuentaData]):
+    pass
 
 
-class ReenviarActivacionResponseSchema(BaseModel):
-    mensaje: str
-    data: None = None
-    success: bool = True
+class ReenviarActivacionResponseSchema(ApiResponse[None]):
+    pass
 
 
-class ActivacionErrorResponse(BaseModel):
-    mensaje: str
-    data: None = None
-    success: bool = False
+class ActivacionErrorResponse(ApiErrorResponse):
+    pass

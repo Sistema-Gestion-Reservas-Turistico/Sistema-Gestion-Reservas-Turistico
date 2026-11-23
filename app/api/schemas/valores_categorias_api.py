@@ -1,6 +1,6 @@
-from typing import Literal
-
 from pydantic import BaseModel, ConfigDict, Field
+
+from app.api.responses import ApiErrorResponse, ApiResponse
 
 
 class ValorCategoriaCrear(BaseModel):
@@ -39,10 +39,8 @@ class ValorCategoriaData(BaseModel):
     es_sistema: bool
 
 
-class ValorCategoriaResponse(BaseModel):
-    mensaje: str
-    data: ValorCategoriaData
-    success: bool
+class ValorCategoriaResponse(ApiResponse[ValorCategoriaData]):
+    pass
 
 
 class ValorCategoriaEstadoData(BaseModel):
@@ -52,16 +50,12 @@ class ValorCategoriaEstadoData(BaseModel):
     activo: bool
 
 
-class ValorCategoriaEstadoResponse(BaseModel):
-    mensaje: str
-    data: ValorCategoriaEstadoData
-    success: bool
+class ValorCategoriaEstadoResponse(ApiResponse[ValorCategoriaEstadoData]):
+    pass
 
 
-class ValoresCategoriaResponse(BaseModel):
-    mensaje: str
-    data: list[ValorCategoriaData]
-    success: bool
+class ValoresCategoriaResponse(ApiResponse[list[ValorCategoriaData]]):
+    pass
 
 
 class ParametrosTransporteData(BaseModel):
@@ -69,16 +63,12 @@ class ParametrosTransporteData(BaseModel):
     estado_vehiculo: list[ValorCategoriaData]
 
 
-class ParametrosTransporteResponse(BaseModel):
-    mensaje: str
-    data: ParametrosTransporteData
-    success: bool
+class ParametrosTransporteResponse(ApiResponse[ParametrosTransporteData]):
+    pass
 
 
-class ValorCategoriaErrorResponse(BaseModel):
-    mensaje: str
-    data: None = None
-    success: bool = False
+class ValorCategoriaErrorResponse(ApiErrorResponse):
+    pass
 
 
 class ValorParametroPagoData(BaseModel):
@@ -100,16 +90,12 @@ class ParametrosPagoData(BaseModel):
     categorias: list[CategoriaParametroPagoData]
 
 
-class ParametrosPagoResponse(BaseModel):
-    mensaje: str
-    data: ParametrosPagoData
-    success: bool
+class ParametrosPagoResponse(ApiResponse[ParametrosPagoData]):
+    pass
 
 
-class ParametrosPagoErrorResponse(BaseModel):
-    mensaje: str
-    data: None = None
-    success: Literal[False] = False
+class ParametrosPagoErrorResponse(ApiErrorResponse):
+    pass
 
 
 class ParametroVigenteData(BaseModel):
@@ -138,16 +124,12 @@ class ParametrosVigentesCategoriaData(BaseModel):
     valores: list[ParametroCategoriaItemData]
 
 
-class ParametroVigenteResponse(BaseModel):
-    mensaje: str
-    data: ParametroVigenteData
-    success: bool
+class ParametroVigenteResponse(ApiResponse[ParametroVigenteData]):
+    pass
 
 
-class ParametrosVigentesCategoriaResponse(BaseModel):
-    mensaje: str
-    data: ParametrosVigentesCategoriaData
-    success: bool
+class ParametrosVigentesCategoriaResponse(ApiResponse[ParametrosVigentesCategoriaData]):
+    pass
 
 
 class ValorAlojamientoAlimentacionCrear(BaseModel):
@@ -186,13 +168,11 @@ class ParametrosAlojamientoAlimentacionData(BaseModel):
     categorias: list[CategoriaAlojamientoAlimentacionData]
 
 
-class ParametrosAlojamientoAlimentacionResponse(BaseModel):
-    mensaje: str
-    data: ParametrosAlojamientoAlimentacionData
-    success: bool
+class ParametrosAlojamientoAlimentacionResponse(
+    ApiResponse[ParametrosAlojamientoAlimentacionData]
+):
+    pass
 
 
-class ParametrosAlojamientoAlimentacionErrorResponse(BaseModel):
-    mensaje: str
-    data: None
-    success: Literal[False] = False
+class ParametrosAlojamientoAlimentacionErrorResponse(ApiErrorResponse):
+    pass

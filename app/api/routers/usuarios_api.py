@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, status
-from fastapi.responses import JSONResponse
+from app.api.responses import JSONResponse
 
 from app.api.dependencies.usuarios import (
     obtener_caso_activar_cuenta,
@@ -173,8 +173,8 @@ def registrar_usuario(
 ) -> UsuarioRegistroResponse | JSONResponse:
     try:
         registro = caso.ejecutar(solicitud.to_domain())
-    except TratamientoDatosNoAceptadoError as error:
-        detalle = str(error)
+    except TratamientoDatosNoAceptadoError:
+        detalle = "You must accept the personal data processing terms to register"
         return _error(
             status.HTTP_400_BAD_REQUEST,
             detalle,
@@ -183,7 +183,7 @@ def registrar_usuario(
     except DatosRegistroInvalidosError as error:
         return _error(
             status.HTTP_400_BAD_REQUEST,
-            "Los datos de registro no son válidos",
+            "Registration data is invalid",
             [
                 {"campo": item.campo, "detalle": item.detalle}
                 for item in error.errores
@@ -192,21 +192,21 @@ def registrar_usuario(
     except CorreoDuplicadoError:
         return _error(
             status.HTTP_409_CONFLICT,
-            "Ya existe una cuenta con el correo indicado",
+            "An account with this email already exists",
         )
     except DocumentoDuplicadoError:
         return _error(
             status.HTTP_409_CONFLICT,
-            "Ya existe una cuenta con el documento indicado",
+            "An account with this document already exists",
         )
     except PersistenciaUsuariosError:
         return _error(
             status.HTTP_503_SERVICE_UNAVAILABLE,
-            "No fue posible completar el registro",
+            "Unable to complete the registration",
         )
 
     return UsuarioRegistroResponse(
-        mensaje="Registro exitoso. Revisa tu correo para activar tu cuenta",
+        message="Registration successful. Check your email to activate your account",
         data=UsuarioRegistroData(
             id=registro.id,
             nombres=registro.nombres,
@@ -241,7 +241,7 @@ def _error(
             "content": {
                 "application/json": {
                     "example": {
-                        "mensaje": "Cuenta activada correctamente",
+                        "mensaje": "Account activated successfully",
                         "data": {
                             "id": 101,
                             "correo": "laura.gomez@correo.com",
@@ -258,7 +258,7 @@ def _error(
             "content": {
                 "application/json": {
                     "example": {
-                        "mensaje": "El enlace de activación no es válido",
+                        "mensaje": "The activation link is invalid",
                         "data": None,
                         "success": False,
                     }
@@ -271,7 +271,7 @@ def _error(
             "content": {
                 "application/json": {
                     "example": {
-                        "mensaje": "La cuenta ya está activa",
+                        "mensaje": "The account is already active",
                         "data": None,
                         "success": False,
                     }
@@ -284,7 +284,7 @@ def _error(
             "content": {
                 "application/json": {
                     "example": {
-                        "mensaje": "El enlace de activación venció. Solicita uno nuevo",
+                        "mensaje": "The activation link has expired. Request a new one",
                         "data": None,
                         "success": False,
                     }
@@ -297,7 +297,7 @@ def _error(
             "content": {
                 "application/json": {
                     "example": {
-                        "mensaje": "No fue posible procesar la activación",
+                        "mensaje": "Unable to process the activation request",
                         "data": None,
                         "success": False,
                     }
@@ -322,23 +322,23 @@ def activar_cuenta(
         cuenta = caso.ejecutar(solicitud.to_domain())
     except TokenActivacionInvalidoError:
         return _error_activacion(
-            status.HTTP_400_BAD_REQUEST, "El enlace de activación no es válido"
+            status.HTTP_400_BAD_REQUEST, "The activation link is invalid"
         )
     except CuentaYaActivaError:
-        return _error_activacion(status.HTTP_409_CONFLICT, "La cuenta ya está activa")
+        return _error_activacion(status.HTTP_409_CONFLICT, "The account is already active")
     except TokenActivacionVencidoError:
         return _error_activacion(
             status.HTTP_410_GONE,
-            "El enlace de activación venció. Solicita uno nuevo",
+            "The activation link has expired. Request a new one",
         )
     except PersistenciaActivacionError:
         return _error_activacion(
             status.HTTP_503_SERVICE_UNAVAILABLE,
-            "No fue posible procesar la activación",
+            "Unable to process the activation request",
         )
 
     return ActivarCuentaResponseSchema(
-        mensaje="Cuenta activada correctamente",
+        message="Account activated successfully",
         data=ActivarCuentaData(
             id=cuenta.id,
             correo=cuenta.correo,
@@ -377,7 +377,7 @@ def activar_cuenta(
             "content": {
                 "application/json": {
                     "example": {
-                        "mensaje": "Demasiadas solicitudes. Intenta de nuevo más tarde",
+                        "mensaje": "Too many requests. Try again later",
                         "data": None,
                         "success": False,
                     }
@@ -390,7 +390,7 @@ def activar_cuenta(
             "content": {
                 "application/json": {
                     "example": {
-                        "mensaje": "No fue posible procesar la activación",
+                        "mensaje": "Unable to process the activation request",
                         "data": None,
                         "success": False,
                     }
@@ -419,15 +419,15 @@ def reenviar_activacion(
     except LimiteReenviosActivacionError:
         return _error_activacion(
             status.HTTP_429_TOO_MANY_REQUESTS,
-            "Demasiadas solicitudes. Intenta de nuevo más tarde",
+            "Too many requests. Try again later",
         )
     except PersistenciaActivacionError:
         return _error_activacion(
             status.HTTP_503_SERVICE_UNAVAILABLE,
-            "No fue posible procesar la activación",
+            "Unable to process the activation request",
         )
     return ReenviarActivacionResponseSchema(
-        mensaje=resultado.mensaje,
+        message="If the email matches a pending account, we will send a new link",
         data=None,
         success=True,
     )

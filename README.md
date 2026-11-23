@@ -26,7 +26,57 @@ El cuerpo de creación es:
 La clave admite únicamente mayúsculas, números y guion bajo, tiene un máximo
 de 50 caracteres, es única sin distinguir mayúsculas y no puede modificarse
 después de crear la categoría. El nombre es obligatorio y tiene un máximo de
-100 caracteres. Las respuestas usan `mensaje`, `data` y `success`.
+100 caracteres.
+
+## Sobre de respuesta de la API (TECH-01)
+
+Todas las respuestas JSON usan `success`, `message`, `timestamp`, `errorCode` y
+`data`. El timestamp se genera en UTC con formato ISO 8601. En las respuestas
+exitosas, `errorCode` es `null`; en los errores se incluye un código identificador
+y `data` siempre es `null`. Los campos internos de `data` y los cuerpos de
+solicitud conservan sus nombres actuales, como `categorias`, `clave`, `codigo`,
+`nombre`, `orden` y `activo`.
+
+Ejemplo de respuesta exitosa:
+
+```json
+{
+  "success": true,
+  "message": "Payment parameters retrieved successfully",
+  "timestamp": "2026-11-23T22:24:00Z",
+  "errorCode": null,
+  "data": {
+    "categorias": [
+      {
+        "clave": "METODO_PAGO",
+        "nombre": "Tarjeta de crédito",
+        "valores": [
+          {
+            "id": 11,
+            "codigo": "TARJETA_CREDITO",
+            "nombre": "Tarjeta de crédito",
+            "orden": 1,
+            "activo": true,
+            "es_sistema": false
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+Ejemplo de respuesta de error:
+
+```json
+{
+  "success": false,
+  "message": "At least one payment method must remain active",
+  "timestamp": "2026-11-23T22:24:00Z",
+  "errorCode": "LAST_ACTIVE_PAYMENT_METHOD",
+  "data": null
+}
+```
 
 Los datos se guardan en memoria y se pierden al reiniciar la aplicación. Las
 operaciones de escritura requieren el rol Administrador: se lee primero
@@ -108,8 +158,7 @@ inactivo responde `404`; una categorÃ­a existente sin valores activos responde
 `200` con una lista vacÃ­a. Los cambios realizados mediante HU-01B/HU-01C se
 reflejan inmediatamente porque ambas consultas usan los mismos repositorios.
 Cuando el adaptador de persistencia reporte un error de base de datos, las
-consultas responden `503` con el mensaje `No fue posible consultar los
-parÃ¡metros`.
+consultas responden `503` con el mensaje `Parameters could not be retrieved`.
 
 ## Registro de usuarios (HU-06)
 

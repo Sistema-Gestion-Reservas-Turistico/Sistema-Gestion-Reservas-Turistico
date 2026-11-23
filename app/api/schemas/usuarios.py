@@ -2,6 +2,8 @@ import re
 
 from pydantic import BaseModel, ConfigDict, Field, StrictBool, field_validator
 
+from app.api.responses import ApiErrorResponse, ApiResponse
+
 from app.domain.models.usuarios import UsuarioRegistroCreate
 
 
@@ -96,10 +98,8 @@ class UsuarioRegistroData(BaseModel):
     estado: str
 
 
-class UsuarioRegistroResponse(BaseModel):
-    mensaje: str
-    data: UsuarioRegistroData
-    success: bool
+class UsuarioRegistroResponse(ApiResponse[UsuarioRegistroData]):
+    pass
 
 
 class ErrorCampoRegistro(BaseModel):
@@ -111,7 +111,5 @@ class ErrorRegistroData(BaseModel):
     errores: list[ErrorCampoRegistro]
 
 
-class ErrorRegistroResponse(BaseModel):
-    mensaje: str
-    data: ErrorRegistroData | None = None
-    success: bool = False
+class ErrorRegistroResponse(ApiErrorResponse):
+    pass
