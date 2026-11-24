@@ -1,5 +1,7 @@
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.api.responses import ApiErrorResponse, ApiResponse
+
 
 class CategoriaParametroCrear(BaseModel):
     """Campos requeridos para crear una categoría de parámetros."""
@@ -25,19 +27,13 @@ class CategoriaParametroData(BaseModel):
     descripcion: str
 
 
-class CategoriaParametroResponse(BaseModel):
-    mensaje: str
-    data: CategoriaParametroData
-    success: bool
+class CategoriaParametroResponse(ApiResponse[CategoriaParametroData]):
+    pass
 
 
-class CategoriasParametroResponse(BaseModel):
-    mensaje: str
-    data: list[CategoriaParametroData]
-    success: bool
+class CategoriasParametroResponse(ApiResponse[list[CategoriaParametroData]]):
+    pass
 
 
-class CategoriaParametroErrorResponse(BaseModel):
-    mensaje: str
-    data: None = None
-    success: bool = False
+class CategoriaParametroErrorResponse(ApiErrorResponse):
+    pass

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, status
-from fastapi.responses import JSONResponse
+from app.api.responses import JSONResponse
 
 from app.api.dependencies.valores_categorias_api import (
     obtener_caso_listar_parametros_transporte,
@@ -41,13 +41,13 @@ def listar_parametros_transporte(
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
             content={
-                "mensaje": "No se encontraron las categorías de transporte iniciales",
+                "mensaje": "The initial transportation categories were not found",
                 "data": None,
                 "success": False,
             },
         )
     return ParametrosTransporteResponse(
-        mensaje="Parámetros de transporte consultados correctamente",
+        message="Transportation parameters retrieved successfully",
         data=ParametrosTransporteData(
             tipo_vehiculo=[
                 ValorCategoriaData.model_validate(valor)

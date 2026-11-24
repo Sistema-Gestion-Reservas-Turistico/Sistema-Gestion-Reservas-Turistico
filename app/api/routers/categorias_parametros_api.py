@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, status
-from fastapi.responses import JSONResponse
+from app.api.responses import JSONResponse
 
 from app.api.dependencies.categorias_parametros import (
     obtener_caso_actualizar_categoria_parametro,
@@ -71,7 +71,7 @@ router = APIRouter(
 def listar_categorias_parametros() -> CategoriasParametroResponse:
     categorias = obtener_repositorio_categoria_parametro().listar()
     return CategoriasParametroResponse(
-        mensaje="Categorías consultadas correctamente",
+        message="Categories retrieved successfully",
         data=categorias,
         success=True,
     )
@@ -98,13 +98,13 @@ def crear_categoria_parametro(
         return JSONResponse(
             status_code=status.HTTP_409_CONFLICT,
             content={
-                "mensaje": "Ya existe una categoría con la clave indicada",
+                "mensaje": "A category with the specified key already exists",
                 "data": None,
                 "success": False,
             },
         )
     return CategoriaParametroResponse(
-        mensaje="Categoría guardada correctamente",
+        message="Category saved successfully",
         data=categoria,
         success=True,
     )
@@ -131,7 +131,7 @@ def actualizar_categoria_parametro(
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={
-                "mensaje": "Debe indicar el nombre o la descripción para actualizar",
+                "mensaje": "Provide a name or description to update the category",
                 "data": None,
                 "success": False,
             },
@@ -146,13 +146,13 @@ def actualizar_categoria_parametro(
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
             content={
-                "mensaje": "No se encontró la categoría indicada",
+                "mensaje": "The specified category was not found",
                 "data": None,
                 "success": False,
             },
         )
     return CategoriaParametroResponse(
-        mensaje="Categoría guardada correctamente",
+        message="Category updated successfully",
         data=categoria,
         success=True,
     )
@@ -178,13 +178,13 @@ def listar_valores_categoria(
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
             content={
-                "mensaje": "La categoría indicada no existe",
+                "mensaje": "The specified category does not exist",
                 "data": None,
                 "success": False,
             },
         )
     return ValoresCategoriaResponse(
-        mensaje="Valores consultados correctamente",
+        message="Category values retrieved successfully",
         data=[ValorCategoriaData.model_validate(valor) for valor in valores],
         success=True,
     )
@@ -219,7 +219,7 @@ def crear_valor_categoria(
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
             content={
-                "mensaje": "La categoría indicada no existe",
+                "mensaje": "The specified category does not exist",
                 "data": None,
                 "success": False,
             },
@@ -228,13 +228,13 @@ def crear_valor_categoria(
         return JSONResponse(
             status_code=status.HTTP_409_CONFLICT,
             content={
-                "mensaje": "Ya existe un valor con el código indicado en esta categoría",
+                "mensaje": "A value with the specified code already exists in this category",
                 "data": None,
                 "success": False,
             },
         )
     return ValorCategoriaResponse(
-        mensaje="Valor guardado correctamente",
+        message="Category value created successfully",
         data=ValorCategoriaData.model_validate(valor),
         success=True,
     )
@@ -268,7 +268,7 @@ def actualizar_valor_categoria(
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={
-                "mensaje": "Debe indicar nombre, descripción u orden para actualizar",
+                "mensaje": "Provide a name, description, or order to update the value",
                 "data": None,
                 "success": False,
             },
@@ -285,7 +285,7 @@ def actualizar_valor_categoria(
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
             content={
-                "mensaje": "La categoría indicada no existe",
+                "mensaje": "The specified category does not exist",
                 "data": None,
                 "success": False,
             },
@@ -294,7 +294,7 @@ def actualizar_valor_categoria(
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
             content={
-                "mensaje": "El valor indicado no existe en esta categoría",
+                "mensaje": "The specified value does not exist in this category",
                 "data": None,
                 "success": False,
             },
@@ -304,15 +304,15 @@ def actualizar_valor_categoria(
             status_code=status.HTTP_409_CONFLICT,
             content={
                 "mensaje": (
-                    "Los valores requeridos por el sistema solo permiten editar "
-                    "el nombre y la descripción"
+                    "System-required values allow only their name and description "
+                    "to be updated"
                 ),
                 "data": None,
                 "success": False,
             },
         )
     return ValorCategoriaResponse(
-        mensaje="Valor guardado correctamente",
+        message="Category value updated successfully",
         data=ValorCategoriaData.model_validate(valor),
         success=True,
     )
@@ -349,7 +349,7 @@ def actualizar_estado_valor_categoria(
             status_code=status.HTTP_409_CONFLICT,
             content={
                 "mensaje": (
-                    "Este valor es requerido por el sistema y no se puede inactivar"
+                    "This value is required by the system and cannot be deactivated"
                 ),
                 "data": None,
                 "success": False,
@@ -359,22 +359,23 @@ def actualizar_estado_valor_categoria(
         return JSONResponse(
             status_code=status.HTTP_409_CONFLICT,
             content={
-                "mensaje": "Debe existir al menos un método de pago activo",
+                "mensaje": "At least one payment method must remain active",
                 "data": None,
                 "success": False,
+                "errorCode": "LAST_ACTIVE_PAYMENT_METHOD",
             },
         )
     except ValorCategoriaNoEncontradoError:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
             content={
-                "mensaje": "El valor indicado no existe",
+                "mensaje": "The specified value was not found",
                 "data": None,
                 "success": False,
             },
         )
     return ValorCategoriaEstadoResponse(
-        mensaje="Estado del valor actualizado correctamente",
+        message="Category value status updated successfully",
         data=ValorCategoriaEstadoData(
             id=valor.id,
             categoria=valor.categoria,
