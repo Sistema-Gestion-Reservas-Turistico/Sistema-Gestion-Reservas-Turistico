@@ -31,10 +31,10 @@ class ApiResponse(BaseModel, Generic[DataT]):
     data: DataT
 
 
-class ApiErrorResponse(ApiResponse[None]):
+class ApiErrorResponse(ApiResponse[object | None]):
     success: Literal[False] = False
     errorCode: str
-    data: None = None
+    data: object | None = None
 
 
 def error_code_for_status(status_code: int) -> str:
@@ -75,6 +75,8 @@ def error_code_for_message(message: str, status_code: int) -> str:
         "The activation link is invalid": "INVALID_ACTIVATION_TOKEN",
         "The activation link has expired. Request a new one": "ACTIVATION_TOKEN_EXPIRED",
         "The account is already active": "ACCOUNT_ALREADY_ACTIVE",
+        "Tu sesión se cerró por inactividad. Inicia sesión de nuevo":
+            "SESION_INACTIVA",
     }.get(message, error_code_for_status(status_code))
 
 
@@ -144,6 +146,11 @@ def english_error_message(message: str, status_code: int) -> str:
             "Unable to process the activation request",
         "Demasiadas solicitudes. Intenta de nuevo más tarde":
             "Too many requests. Try again later",
+        "Tu sesión se cerró por inactividad. Inicia sesión de nuevo":
+            "Tu sesión se cerró por inactividad. Inicia sesión de nuevo",
+        "La sesión es inválida, venció o ya fue cerrada":
+            "The session is invalid, expired or closed",
+        "No fue posible validar la sesión": "No fue posible validar la sesión",
     }
     if message in translations:
         return translations[message]
@@ -173,6 +180,7 @@ def api_error_response(
     status_code: int,
     message: str,
     error_code: str | None = None,
+    data: object | None = None,
 ) -> "JSONResponse":
     body = ApiErrorResponse(
         success=False,
@@ -180,14 +188,12 @@ def api_error_response(
         errorCode=error_code or error_code_for_message(
             english_error_message(message, status_code), status_code
         ),
-        data=None,
+        data=data,
     )
     return JSONResponse(status_code=status_code, content=body.model_dump())
 
 
 class JSONResponse(FastAPIJSONResponse):
-    """JSON response that upgrades legacy router errors to the API envelope."""
-
     def __init__(self, content, status_code: int = 200, **kwargs):
         if isinstance(content, dict):
             success = bool(content.get("success", status_code < 400))
@@ -215,14 +221,15 @@ class JSONResponse(FastAPIJSONResponse):
                     data=data,
                 )
             else:
+                codigo_error = error_code or error_code_for_message(
+                    message, status_code
+                )
                 envelope = ApiErrorResponse(
                     success=False,
                     message=message,
                     timestamp=timestamp,
-                    errorCode=error_code or error_code_for_message(
-                        message, status_code
-                    ),
-                    data=None,
+                    errorCode=codigo_error,
+                    data=data if codigo_error == "SESION_INACTIVA" else None,
                 )
             content = envelope.model_dump()
 

@@ -208,3 +208,25 @@ genera un token nuevo para cuentas
 pendientes, invalida enlaces anteriores y responde igual para correos
 desconocidos o cuentas ya activas. Se permiten hasta tres solicitudes por
 correo por hora (`MAX_REENVIOS_ACTIVACION_POR_HORA`).
+
+## Cierre de sesión por inactividad (HU-10)
+
+El login de `POST /api/v1/auth/login` crea una sesión y devuelve el token como
+`Bearer`, junto con la vigencia en segundos (`expira_en`, por defecto 1800) y
+el límite de inactividad (`inactividad_max`, por defecto 900). Se configuran con
+`MINUTOS_EXPIRACION_TOKEN` y `MINUTOS_INACTIVIDAD_SESION`.
+
+- `GET /api/v1/auth/me` requiere `Authorization: Bearer <token>`, actualiza la
+  última actividad y devuelve los datos de la sesión.
+- `POST /api/v1/auth/sesion/mantener` requiere Bearer, rota el token e invalida
+  el anterior.
+- `POST /api/v1/auth/logout` requiere Bearer y cierra explícitamente la sesión
+  con motivo `LOGOUT`.
+
+Las sesiones vencidas, inexistentes o cerradas por logout responden `401`.
+Cuando se supera el límite de inactividad, la sesión se cierra con motivo
+`INACTIVIDAD` y responde `401` con `errorCode: "SESION_INACTIVA"` y
+`data: {"codigo": "SESION_INACTIVA"}`. Los fallos del repositorio de sesiones
+responden `503`. El repositorio en memoria solo almacena hashes SHA-256 de los
+tokens. En rutas administrativas, un Bearer presente se valida y determina el
+rol; si no se envía, se conserva el fallback transitorio `X-Rol`.

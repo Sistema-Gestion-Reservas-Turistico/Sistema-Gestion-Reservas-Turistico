@@ -37,6 +37,11 @@ from app.api.routers.parametros_alojamiento_alimentacion_api import (
 from app.api.dependencies.usuarios import obtener_caso_cargar_parametros_usuarios
 from app.api.routers.usuarios_api import router as usuarios_router
 from app.api.routers.auth_api import router as auth_router
+from app.domain.exceptions.sesion import (
+    PersistenciaSesionError,
+    SesionCerradaPorInactividadError,
+    SesionInvalidaOCerradaError,
+)
 
 
 @asynccontextmanager
@@ -56,6 +61,13 @@ app.include_router(consulta_parametros_router)
 app.include_router(alojamiento_alimentacion_router)
 app.include_router(usuarios_router)
 app.include_router(auth_router)
+
+_RUTAS_AUTH = {
+    "/api/v1/auth/login",
+    "/api/v1/auth/me",
+    "/api/v1/auth/sesion/mantener",
+    "/api/v1/auth/logout",
+}
 
 
 def generar_openapi():
@@ -97,14 +109,34 @@ def generar_openapi():
             }
         },
     }
-    for path_item in esquema["paths"].values():
+    for ruta, path_item in esquema["paths"].items():
         for operation in path_item.values():
             if not isinstance(operation, dict) or "responses" not in operation:
                 continue
-            operation["responses"]["422"] = validation_response.copy()
-            operation["responses"].setdefault(
-                "500",
-                {
+            if ruta in _RUTAS_AUTH:
+                respuesta_validacion = {
+                    "description": "Request validation failed",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SesionErrorResponse"
+                            }
+                        }
+                    },
+                }
+                respuesta_interna = {
+                    "description": "Internal server error",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SesionErrorResponse"
+                            }
+                        }
+                    },
+                }
+            else:
+                respuesta_validacion = validation_response
+                respuesta_interna = {
                     "description": "Internal server error",
                     "content": {
                         "application/json": {
@@ -118,11 +150,15 @@ def generar_openapi():
                             },
                         }
                     },
-                },
-            )
+                }
+            operation["responses"]["422"] = respuesta_validacion.copy()
+            operation["responses"].setdefault("500", respuesta_interna)
             for codigo, response in operation["responses"].items():
                 status_code = int(codigo) if str(codigo).isdigit() else 500
                 for media_type in response.get("content", {}).values():
+                    if ruta in _RUTAS_AUTH:
+                        media_type.pop("example", None)
+                        media_type.pop("examples", None)
                     if isinstance(media_type.get("example"), dict):
                         media_type["example"] = _envolver_ejemplo(
                             media_type["example"], status_code
@@ -142,17 +178,22 @@ def _envolver_ejemplo(ejemplo: dict, status_code: int) -> dict:
     if not isinstance(message, str):
         message = "Request completed successfully" if success else "The request failed"
     message = english_error_message(message, status_code)
+    error_code = (
+        None
+        if success
+        else ejemplo.get("errorCode")
+        or error_code_for_message(message, status_code)
+    )
     return {
         "success": success,
         "message": message,
         "timestamp": utc_timestamp(),
-        "errorCode": (
-            None
-            if success
-            else ejemplo.get("errorCode")
-            or error_code_for_message(message, status_code)
+        "errorCode": error_code,
+        "data": (
+            ejemplo.get("data")
+            if success or error_code == "SESION_INACTIVA"
+            else None
         ),
-        "data": ejemplo.get("data") if success else None,
     }
 
 
@@ -175,6 +216,28 @@ async def manejar_error_http(request: Request, error: HTTPException):
     }
     message = messages.get(error.status_code, "The request failed")
     return api_error_response(error.status_code, message)
+
+
+@app.exception_handler(SesionCerradaPorInactividadError)
+async def manejar_sesion_inactiva(
+    _: Request, error: SesionCerradaPorInactividadError
+):
+    return api_error_response(
+        401,
+        str(error),
+        error.codigo,
+        {"codigo": error.codigo},
+    )
+
+
+@app.exception_handler(SesionInvalidaOCerradaError)
+async def manejar_sesion_invalida(_: Request, error: SesionInvalidaOCerradaError):
+    return api_error_response(401, str(error), "UNAUTHORIZED")
+
+
+@app.exception_handler(PersistenciaSesionError)
+async def manejar_persistencia_sesion(_: Request, error: PersistenciaSesionError):
+    return api_error_response(503, str(error), "SERVICE_UNAVAILABLE")
 
 
 @app.exception_handler(RequestValidationError)

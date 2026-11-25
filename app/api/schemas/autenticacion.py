@@ -21,6 +21,10 @@ class LoginExitosoData(BaseModel):
     apellidos: str
     correo: str
     rol: str
+    token: str
+    tipo: str
+    expira_en: int
+    inactividad_max: int
 
 
 class LoginExitosoResponse(ApiResponse[LoginExitosoData]):
