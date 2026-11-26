@@ -43,9 +43,10 @@ def _ejemplo_error(mensaje: str) -> dict:
                                 "data": {
                                     "nivel": "DEPARTAMENTO",
                                     "id_padre": 1,
-                                    "total": 3,
+                                    "total": 4,
                                     "ubicaciones": [
                                         {"id": 5, "nombre": "Antioquia"},
+                                        {"id": 17, "nombre": "Caldas"},
                                         {"id": 63, "nombre": "Quindío"},
                                         {"id": 68, "nombre": "Santander"},
                                     ],

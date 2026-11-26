@@ -21,6 +21,7 @@ class CargarDestinosGeograficosUseCase:
             Departamento(5, 1, "Antioquia"),
             Departamento(63, 1, "Quindío"),
             Departamento(68, 1, "Santander"),
+            Departamento(17, 1, "Caldas"),
         ):
             self._territorios.crear_departamento_si_no_existe(departamento)
 
@@ -52,6 +53,15 @@ class CargarDestinosGeograficosUseCase:
                 nombre="Calarcá",
                 id_departamento=63,
                 habilitado=False,
+            ),
+            MunicipioTerritorial(
+                id_municipio=17653,
+                latitud_min=5.35,
+                latitud_max=5.45,
+                longitud_min=-75.10,
+                longitud_max=-74.95,
+                nombre="Salamina",
+                id_departamento=17,
             ),
         ):
             self._territorios.crear_municipio_si_no_existe(municipio)

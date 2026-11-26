@@ -30,11 +30,21 @@ def test_seed_es_idempotente_y_punto_de_salento_es_valido() -> None:
     assert [
         departamento.nombre
         for departamento in territorios.listar_departamentos_por_pais(1)
-    ] == ["Antioquia", "Quindío", "Santander"]
+    ] == ["Antioquia", "Quindío", "Santander", "Caldas"]
     assert [
         municipio.nombre
         for municipio in territorios.listar_municipios_por_departamento(63)
     ] == ["Armenia", "Salento"]
+    sugerencias = territorios.listar_ubicaciones_autocompletar()
+    assert not any(item.nombre == "Calarcá" for item in sugerencias)
+    assert any(
+        item.nombre == "Salento" and item.departamento == "Quindío"
+        for item in sugerencias
+    )
+    assert any(
+        item.nombre == "Salamina" and item.departamento == "Caldas"
+        for item in sugerencias
+    )
 
 
 def test_seed_no_reemplaza_destino_existente() -> None:

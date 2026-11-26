@@ -43,6 +43,7 @@ from app.api.routers.usuarios_api import router as usuarios_router
 from app.api.routers.auth_api import router as auth_router
 from app.api.routers.geo_destinos_api import router as geo_router
 from app.api.routers.geo_ubicaciones_api import router as geo_ubicaciones_router
+from app.api.routers.geo_autocompletar_api import router as geo_autocompletar_router
 
 
 @asynccontextmanager
@@ -65,6 +66,7 @@ app.include_router(usuarios_router)
 app.include_router(auth_router)
 app.include_router(geo_router)
 app.include_router(geo_ubicaciones_router)
+app.include_router(geo_autocompletar_router)
 
 
 def generar_openapi():
@@ -113,6 +115,7 @@ def generar_openapi():
             if ruta in {
                 "/api/v1/geo/destinos/{id_destino}/coordenadas",
                 "/api/v1/geo/ubicaciones",
+                "/api/v1/geo/ubicaciones/autocompletar",
             }:
                 operation["responses"].pop("422", None)
                 continue

@@ -223,6 +223,16 @@ El seed idempotente carga el municipio 63690 (Salento) y el destino 15
 de prueba configurados. Define `JWT_SECRET_KEY` con un valor aleatorio de al
 menos 32 caracteres y `MINUTOS_EXPIRACION_JWT` para ajustar la vigencia del JWT.
 
+## Autocompletar ubicaciones (HU-13)
+
+`GET /api/v1/geo/ubicaciones/autocompletar` requiere un Bearer JWT válido y
+acepta `q` (mínimo tres caracteres) y `limite` (positivo, por defecto 10).
+Busca departamentos y municipios habilitados sin distinguir mayúsculas ni
+tildes; prioriza prefijos y luego ordena alfabéticamente. Las sugerencias
+municipales incluyen el departamento. Sin coincidencias responde `200` con
+`success: false`; entradas inválidas responden `400` y fallos de persistencia
+`503`.
+
 ## Búsqueda dinámica de ubicación (HU-11)
 
 `GET /api/v1/geo/ubicaciones` requiere un Bearer JWT válido y acepta uno de dos

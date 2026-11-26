@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from app.domain.entities.departamento import Departamento
 from app.domain.entities.municipio import MunicipioTerritorial
 from app.domain.entities.pais import Pais
+from app.domain.entities.sugerencia_territorial import SugerenciaTerritorial
 
 
 class TerritorioRepository(ABC):
@@ -45,4 +46,8 @@ class TerritorioRepository(ABC):
     def listar_municipios_por_departamento(
         self, id_departamento: int
     ) -> list[MunicipioTerritorial]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def listar_ubicaciones_autocompletar(self) -> list[SugerenciaTerritorial]:
         raise NotImplementedError

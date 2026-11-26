@@ -3,6 +3,7 @@ from threading import Lock
 from app.domain.entities.departamento import Departamento
 from app.domain.entities.municipio import MunicipioTerritorial
 from app.domain.entities.pais import Pais
+from app.domain.entities.sugerencia_territorial import SugerenciaTerritorial
 from app.domain.interfaces.territorio import TerritorioRepository
 
 
@@ -78,3 +79,28 @@ class InMemoryTerritorioRepository(TerritorioRepository):
                 if municipio.id_departamento == id_departamento
                 and municipio.habilitado
             ]
+
+    def listar_ubicaciones_autocompletar(self) -> list[SugerenciaTerritorial]:
+        with self._lock:
+            sugerencias = [
+                SugerenciaTerritorial(
+                    id=departamento.id,
+                    nombre=departamento.nombre,
+                    tipo="DEPARTAMENTO",
+                )
+                for departamento in self._departamentos.values()
+            ]
+            sugerencias.extend(
+                SugerenciaTerritorial(
+                    id=municipio.id_municipio,
+                    nombre=municipio.nombre,
+                    tipo="MUNICIPIO",
+                    departamento=self._departamentos[
+                        municipio.id_departamento
+                    ].nombre,
+                )
+                for municipio in self._municipios.values()
+                if municipio.habilitado
+                and municipio.id_departamento in self._departamentos
+            )
+            return sugerencias

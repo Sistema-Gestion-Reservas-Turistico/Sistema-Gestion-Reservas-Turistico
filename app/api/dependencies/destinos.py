@@ -12,6 +12,9 @@ from app.services.use_cases.cargar_destinos_geograficos import (
 from app.services.use_cases.consultar_ubicaciones_dinamicas import (
     ConsultarUbicacionesDinamicasUseCase,
 )
+from app.services.use_cases.autocompletar_ubicaciones import (
+    AutocompletarUbicacionesUseCase,
+)
 from app.services.use_cases.registrar_coordenadas_destino import (
     RegistrarCoordenadasDestinoUseCase,
 )
@@ -49,3 +52,7 @@ def obtener_caso_consultar_ubicaciones_dinamicas() -> (
     return ConsultarUbicacionesDinamicasUseCase(
         obtener_repositorio_territorios()
     )
+
+
+def obtener_caso_autocompletar_ubicaciones() -> AutocompletarUbicacionesUseCase:
+    return AutocompletarUbicacionesUseCase(obtener_repositorio_territorios())

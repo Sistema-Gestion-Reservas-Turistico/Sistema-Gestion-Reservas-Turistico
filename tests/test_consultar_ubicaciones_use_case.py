@@ -42,6 +42,7 @@ def test_id_pais_lista_departamentos_ordenados(contexto) -> None:
     assert respuesta.data.nivel == "DEPARTAMENTO"
     assert [item.nombre for item in respuesta.data.ubicaciones] == [
         "Antioquia",
+        "Caldas",
         "Quindío",
         "Santander",
     ]

@@ -43,7 +43,7 @@ def test_id_pais_lista_departamentos_ordenados(cliente: TestClient) -> None:
     assert respuesta.status_code == 200
     assert [
         item["nombre"] for item in respuesta.json()["data"]["ubicaciones"]
-    ] == ["Antioquia", "Quindío", "Santander"]
+    ] == ["Antioquia", "Caldas", "Quindío", "Santander"]
 
 
 def test_id_departamento_lista_municipios_habilitados(cliente: TestClient) -> None:
