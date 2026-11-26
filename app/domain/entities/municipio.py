@@ -8,3 +8,9 @@ class MunicipioTerritorial:
     latitud_max: float
     longitud_min: float
     longitud_max: float
+    nombre: str = ""
+    id_departamento: int = 0
+    habilitado: bool = True
+
+
+Municipio = MunicipioTerritorial

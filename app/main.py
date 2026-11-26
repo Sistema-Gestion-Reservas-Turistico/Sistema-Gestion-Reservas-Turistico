@@ -42,6 +42,7 @@ from app.api.dependencies.destinos import (
 from app.api.routers.usuarios_api import router as usuarios_router
 from app.api.routers.auth_api import router as auth_router
 from app.api.routers.geo_destinos_api import router as geo_router
+from app.api.routers.geo_ubicaciones_api import router as geo_ubicaciones_router
 
 
 @asynccontextmanager
@@ -63,6 +64,7 @@ app.include_router(alojamiento_alimentacion_router)
 app.include_router(usuarios_router)
 app.include_router(auth_router)
 app.include_router(geo_router)
+app.include_router(geo_ubicaciones_router)
 
 
 def generar_openapi():
@@ -108,7 +110,10 @@ def generar_openapi():
         for operation in path_item.values():
             if not isinstance(operation, dict) or "responses" not in operation:
                 continue
-            if ruta == "/api/v1/geo/destinos/{id_destino}/coordenadas":
+            if ruta in {
+                "/api/v1/geo/destinos/{id_destino}/coordenadas",
+                "/api/v1/geo/ubicaciones",
+            }:
                 operation["responses"].pop("422", None)
                 continue
             operation["responses"]["422"] = validation_response.copy()

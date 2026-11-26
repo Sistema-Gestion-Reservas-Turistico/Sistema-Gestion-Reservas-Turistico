@@ -26,6 +26,15 @@ def test_seed_es_idempotente_y_punto_de_salento_es_valido() -> None:
     assert not territorios.coordenadas_pertenecen_municipio(
         63690, 4.8, -75.5712
     )
+    assert [pais.nombre for pais in territorios.listar_paises()] == ["Colombia"]
+    assert [
+        departamento.nombre
+        for departamento in territorios.listar_departamentos_por_pais(1)
+    ] == ["Antioquia", "Quindío", "Santander"]
+    assert [
+        municipio.nombre
+        for municipio in territorios.listar_municipios_por_departamento(63)
+    ] == ["Armenia", "Salento"]
 
 
 def test_seed_no_reemplaza_destino_existente() -> None:

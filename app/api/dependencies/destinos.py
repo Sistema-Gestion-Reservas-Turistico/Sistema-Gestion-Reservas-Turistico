@@ -9,6 +9,9 @@ from app.repositories.adapters.in_memory_territorio_repository import (
 from app.services.use_cases.cargar_destinos_geograficos import (
     CargarDestinosGeograficosUseCase,
 )
+from app.services.use_cases.consultar_ubicaciones_dinamicas import (
+    ConsultarUbicacionesDinamicasUseCase,
+)
 from app.services.use_cases.registrar_coordenadas_destino import (
     RegistrarCoordenadasDestinoUseCase,
 )
@@ -37,4 +40,12 @@ def obtener_caso_cargar_destinos_geograficos() -> CargarDestinosGeograficosUseCa
     return CargarDestinosGeograficosUseCase(
         obtener_repositorio_destinos(),
         obtener_repositorio_territorios(),
+    )
+
+
+def obtener_caso_consultar_ubicaciones_dinamicas() -> (
+    ConsultarUbicacionesDinamicasUseCase
+):
+    return ConsultarUbicacionesDinamicasUseCase(
+        obtener_repositorio_territorios()
     )

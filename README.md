@@ -222,3 +222,13 @@ El seed idempotente carga el municipio 63690 (Salento) y el destino 15
 (`Reserva Natural Demo`). El punto `4.6372, -75.5712` está dentro de los límites
 de prueba configurados. Define `JWT_SECRET_KEY` con un valor aleatorio de al
 menos 32 caracteres y `MINUTOS_EXPIRACION_JWT` para ajustar la vigencia del JWT.
+
+## Búsqueda dinámica de ubicación (HU-11)
+
+`GET /api/v1/geo/ubicaciones` requiere un Bearer JWT válido y acepta uno de dos
+filtros opcionales: `id_pais` devuelve departamentos y `id_departamento`
+devuelve municipios habilitados. Sin filtros devuelve países. Los resultados
+se ordenan alfabéticamente; un nivel sin ubicaciones responde `200` con
+`success: false` y una lista vacía. Los identificadores no numéricos o el envío
+simultáneo de ambos filtros responden `400`; el token inválido o ausente responde
+`401`, y los errores de persistencia `503`.

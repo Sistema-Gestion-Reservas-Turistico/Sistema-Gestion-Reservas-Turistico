@@ -22,23 +22,27 @@ def autorizar_administrador(
 _bearer = HTTPBearer(auto_error=False)
 
 
-def autorizar_administrador_jwt(
-    request: Request,
+def autenticar_jwt(
     credenciales: HTTPAuthorizationCredentials | None = Depends(_bearer),
-) -> None:
+) -> dict:
     if credenciales is None or credenciales.scheme.casefold() != "bearer":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication is required",
         )
     try:
-        claims = decodificar_token_jwt(credenciales.credentials)
+        return decodificar_token_jwt(credenciales.credentials)
     except jwt.InvalidTokenError as error:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication is required",
         ) from error
 
+
+def autorizar_administrador_jwt(
+    request: Request,
+    claims: dict = Depends(autenticar_jwt),
+) -> None:
     rol = claims["rol"]
     request.state.rol = rol
     if rol != "Administrador":
