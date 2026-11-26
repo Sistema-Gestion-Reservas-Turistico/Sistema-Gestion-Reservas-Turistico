@@ -230,3 +230,32 @@ Cuando se supera el límite de inactividad, la sesión se cierra con motivo
 responden `503`. El repositorio en memoria solo almacena hashes SHA-256 de los
 tokens. En rutas administrativas, un Bearer presente se valida y determina el
 rol; si no se envía, se conserva el fallback transitorio `X-Rol`.
+
+## User sign-in (HU-09)
+
+`POST /api/v1/auth/login` accepts `email` and `password` (the previous `correo` request key is also accepted for compatibility). It verifies the password hash and only allows active accounts. Email matching is case-insensitive, and invalid email/password pairs return the same generic `401` message. Pending accounts receive `403`; missing login fields receive `400`.
+
+Successful login returns a signed HS256 JWT with the user ID (`sub`) and role (`role`) claims. It expires after 30 minutes by default; configure `MINUTOS_EXPIRACION_TOKEN` and set `JWT_SECRET_KEY` to a random secret of at least 32 characters. HU-10's session repository stores only the SHA-256 hash of each token and continues enforcing the 15-minute inactivity limit and token rotation.
+
+The response contract uses English JSON keys and messages:
+
+```json
+{
+  "success": true,
+  "message": "Login successful",
+  "data": {
+    "token": "<signed-jwt>",
+    "token_type": "Bearer",
+    "expires_in": 1800,
+    "inactivity_timeout": 900,
+    "user": {
+      "id": 101,
+      "first_name": "Laura",
+      "last_name": "Gomez",
+      "role": "Cliente"
+    }
+  }
+}
+```
+
+`GET /api/v1/auth/me` requires `Authorization: Bearer <token>` and returns the authenticated user and current session data. Missing, altered, expired, closed, or mismatched tokens return `401`.

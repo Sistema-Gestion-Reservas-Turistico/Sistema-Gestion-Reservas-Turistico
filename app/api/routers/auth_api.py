@@ -1,9 +1,12 @@
 from datetime import timedelta, timezone
 
 from fastapi import APIRouter, Depends, Request, status
-from app.api.responses import JSONResponse
+from app.api.responses import JSONResponse, api_error_response
 
-from app.api.dependencies.usuarios import obtener_caso_autenticar_usuario
+from app.api.dependencies.usuarios import (
+    obtener_caso_autenticar_usuario,
+    obtener_repositorio_usuarios,
+)
 from app.api.dependencies.sesion import (
     obtener_caso_crear_sesion,
     obtener_caso_cerrar_sesion,
@@ -16,6 +19,7 @@ from app.api.schemas.autenticacion import (
     LoginExitosoData,
     LoginExitosoResponse,
     LoginRequestSchema,
+    UsuarioAutenticadoData,
 )
 from app.api.schemas.sesion import (
     CerrarSesionApiResponse,
@@ -86,7 +90,7 @@ def iniciar_sesion(
         return _error(
             status.HTTP_401_UNAUTHORIZED,
             "The email or password is incorrect",
-            {"intentos_restantes": error.intentos_restantes},
+            {"attempts_remaining": error.intentos_restantes},
         )
     except CuentaBloqueadaTemporalmenteError as error:
         mensaje = (
@@ -97,16 +101,16 @@ def iniciar_sesion(
             status.HTTP_423_LOCKED,
             mensaje,
             {
-                "bloqueada_hasta": error.bloqueada_hasta.astimezone(
+                "locked_until": error.bloqueada_hasta.astimezone(
                     timezone(timedelta(hours=-5), name="COT")
                 ).isoformat(),
-                "minutos_restantes": error.minutos_restantes,
+                "minutes_remaining": error.minutos_restantes,
             },
         )
     except CuentaPendienteActivacionError:
         return _error(
             status.HTTP_403_FORBIDDEN,
-            "The account has not been activated",
+            "Activate your account using the link sent to your email",
         )
     except PersistenciaSeguridadLoginError:
         return _error(
@@ -118,15 +122,16 @@ def iniciar_sesion(
     return LoginExitosoResponse(
         message="Login successful",
         data=LoginExitosoData(
-            id=usuario.id,
-            nombres=usuario.nombres,
-            apellidos=usuario.apellidos,
-            correo=usuario.correo,
-            rol=usuario.rol,
             token=sesion.token,
-            tipo=sesion.tipo,
-            expira_en=sesion.expira_en,
-            inactividad_max=sesion.inactividad_max,
+            token_type=sesion.tipo,
+            expires_in=sesion.expira_en,
+            inactivity_timeout=sesion.inactividad_max,
+            user=UsuarioAutenticadoData(
+                id=usuario.id,
+                first_name=usuario.nombres,
+                last_name=usuario.apellidos,
+                role=usuario.rol,
+            ),
         ),
         success=True,
     )
@@ -149,17 +154,27 @@ def iniciar_sesion(
 )
 def obtener_sesion_actual(
     sesion: SesionUsuario = Depends(obtener_sesion_activa),
-) -> SesionActualApiResponse:
+    usuarios=Depends(obtener_repositorio_usuarios),
+) -> SesionActualApiResponse | JSONResponse:
+    usuario = usuarios.buscar_por_id(sesion.usuario_id)
+    if usuario is None:
+        return api_error_response(401, "Authentication is required", "UNAUTHORIZED")
     return SesionActualApiResponse(
         success=True,
         message="Current session retrieved successfully",
         data=SesionActualData(
-            usuario_id=sesion.usuario_id,
-            correo=sesion.correo,
-            rol=sesion.rol,
-            inicio_en=sesion.inicio_en,
-            ultima_actividad=sesion.ultima_actividad,
-            inactividad_max=MINUTOS_INACTIVIDAD_SESION * 60,
+            user_id=sesion.usuario_id,
+            email=sesion.correo,
+            role=sesion.rol,
+            started_at=sesion.inicio_en,
+            last_activity=sesion.ultima_actividad,
+            inactivity_timeout=MINUTOS_INACTIVIDAD_SESION * 60,
+            user=UsuarioAutenticadoData(
+                id=usuario.id,
+                first_name=usuario.nombres,
+                last_name=usuario.apellidos,
+                role=usuario.rol,
+            ),
         ),
     )
 
@@ -187,12 +202,12 @@ def mantener_sesion(
     renovada = caso.ejecutar(token)
     return SesionRenovadaApiResponse(
         success=True,
-        message="Sesión renovada",
+        message="Session renewed successfully",
         data=SesionRenovadaData(
             token=renovada.token,
-            tipo=renovada.tipo,
-            expira_en=renovada.expira_en,
-            inactividad_max=renovada.inactividad_max,
+            token_type=renovada.tipo,
+            expires_in=renovada.expira_en,
+            inactivity_timeout=renovada.inactividad_max,
         ),
     )
 
@@ -221,9 +236,9 @@ def cerrar_sesion(
         success=True,
         message="Session closed successfully",
         data=CerrarSesionData(
-            mensaje=cerrada.mensaje,
-            motivo_cierre=cerrada.motivo_cierre,
-            cerrada_en=cerrada.cerrada_en,
+            message="Session closed successfully",
+            close_reason=cerrada.motivo_cierre,
+            closed_at=cerrada.cerrada_en,
         ),
     )
 

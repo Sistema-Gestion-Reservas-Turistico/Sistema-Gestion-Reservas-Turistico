@@ -19,7 +19,7 @@ class ValidarActividadSesionUseCase:
     ) -> SesionUsuario:
         momento = ahora or datetime.now(timezone.utc)
         token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
-        sesion = cargar_sesion_vigente(self._repositorio, token_hash, momento)
+        sesion = cargar_sesion_vigente(self._repositorio, token, momento)
         try:
             return self._repositorio.actualizar_actividad(token_hash, momento)
         except SesionInvalidaOCerradaError:

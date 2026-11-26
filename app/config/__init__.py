@@ -11,6 +11,9 @@ MAX_REENVIOS_ACTIVACION_POR_HORA = int(
 )
 MINUTOS_INACTIVIDAD_SESION = int(os.getenv("MINUTOS_INACTIVIDAD_SESION", "15"))
 MINUTOS_EXPIRACION_TOKEN = int(os.getenv("MINUTOS_EXPIRACION_TOKEN", "30"))
+JWT_SECRET_KEY = os.getenv(
+    "JWT_SECRET_KEY", "local-development-secret-change-before-deploy"
+)
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")
 
 if MAX_INTENTOS_FALLIDOS_LOGIN < 1:
@@ -25,3 +28,5 @@ if MINUTOS_INACTIVIDAD_SESION < 1:
     raise ValueError("MINUTOS_INACTIVIDAD_SESION debe ser mayor que cero")
 if MINUTOS_EXPIRACION_TOKEN < 1:
     raise ValueError("MINUTOS_EXPIRACION_TOKEN debe ser mayor que cero")
+if len(JWT_SECRET_KEY) < 32:
+    raise ValueError("JWT_SECRET_KEY debe tener al menos 32 caracteres")

@@ -19,7 +19,7 @@ class CerrarSesionUseCase:
     ) -> CerrarSesionResponse:
         momento = ahora or datetime.now(timezone.utc)
         token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
-        cargar_sesion_vigente(self._repositorio, token_hash, momento)
+        cargar_sesion_vigente(self._repositorio, token, momento)
         try:
             sesion = self._repositorio.cerrar_por_logout(token_hash, momento)
         except SesionInvalidaOCerradaError:

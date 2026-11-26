@@ -1,11 +1,11 @@
 import hashlib
-import secrets
 from datetime import datetime, timedelta, timezone
 
 from app.config import MINUTOS_EXPIRACION_TOKEN, MINUTOS_INACTIVIDAD_SESION
 from app.domain.exceptions.sesion import PersistenciaSesionError
 from app.domain.interfaces.sesion import SesionRepository
 from app.domain.models.sesion import SesionCreate, SesionRenovadaResponse
+from app.services.security.jwt_tokens import crear_token_jwt
 
 
 class CrearSesionUsuarioUseCase:
@@ -20,7 +20,7 @@ class CrearSesionUsuarioUseCase:
         ahora: datetime | None = None,
     ) -> SesionRenovadaResponse:
         momento = ahora or datetime.now(timezone.utc)
-        token = secrets.token_urlsafe(32)
+        token = crear_token_jwt(usuario_id, rol, momento)
         token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
         expira_en = momento + timedelta(minutes=MINUTOS_EXPIRACION_TOKEN)
         try:

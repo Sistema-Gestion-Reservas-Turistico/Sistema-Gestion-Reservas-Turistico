@@ -152,6 +152,12 @@ def generar_openapi():
                     },
                 }
             operation["responses"]["422"] = respuesta_validacion.copy()
+            if ruta == "/api/v1/auth/login":
+                operation["responses"].pop("422", None)
+                operation["responses"]["400"] = {
+                    **respuesta_validacion,
+                    "description": "Email or password field is missing or invalid",
+                }
             operation["responses"].setdefault("500", respuesta_interna)
             for codigo, response in operation["responses"].items():
                 status_code = int(codigo) if str(codigo).isdigit() else 500
@@ -168,6 +174,26 @@ def generar_openapi():
                             ejemplo["value"] = _envolver_ejemplo(
                                 ejemplo["value"], status_code
                             )
+    esquema["paths"]["/api/v1/auth/login"]["post"]["responses"]["200"][
+        "content"
+    ]["application/json"]["example"] = {
+        "success": True,
+        "message": "Login successful",
+        "timestamp": utc_timestamp(),
+        "errorCode": None,
+        "data": {
+            "token": "<signed-jwt>",
+            "token_type": "Bearer",
+            "expires_in": 1800,
+            "inactivity_timeout": 900,
+            "user": {
+                "id": 101,
+                "first_name": "Laura",
+                "last_name": "Gomez",
+                "role": "Cliente",
+            },
+        },
+    }
     app.openapi_schema = esquema
     return esquema
 
@@ -226,7 +252,7 @@ async def manejar_sesion_inactiva(
         401,
         str(error),
         error.codigo,
-        {"codigo": error.codigo},
+        {"code": error.codigo},
     )
 
 
@@ -244,6 +270,17 @@ async def manejar_persistencia_sesion(_: Request, error: PersistenciaSesionError
 async def manejar_error_validacion(
     request: Request, error: RequestValidationError
 ):
+    if request.url.path == "/api/v1/auth/login":
+        errores = error.errors()
+        campos = {str(item.get("loc", ("",))[-1]) for item in errores}
+        if "email" in campos or "correo" in campos:
+            mensaje = "The email field is required"
+        elif "password" in campos:
+            mensaje = "The password field is required"
+        else:
+            mensaje = "The login data is invalid"
+        return api_error_response(400, mensaje, "VALIDATION_ERROR")
+
     if request.url.path == "/api/v1/usuarios/registro":
         return api_error_response(400, "Registration data is invalid", "VALIDATION_ERROR")
 

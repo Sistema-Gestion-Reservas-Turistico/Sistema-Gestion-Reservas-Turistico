@@ -69,6 +69,8 @@ def error_code_for_message(message: str, status_code: int) -> str:
             "LAST_ACTIVE_PAYMENT_METHOD",
         "The email or password is incorrect": "INVALID_CREDENTIALS",
         "The account has not been activated": "ACCOUNT_NOT_ACTIVATED",
+        "Activate your account using the link sent to your email":
+            "ACCOUNT_NOT_ACTIVATED",
         "The account is temporarily locked": "ACCOUNT_TEMPORARILY_LOCKED",
         "An account with this email already exists": "EMAIL_ALREADY_REGISTERED",
         "An account with this document already exists": "DOCUMENT_ALREADY_REGISTERED",
