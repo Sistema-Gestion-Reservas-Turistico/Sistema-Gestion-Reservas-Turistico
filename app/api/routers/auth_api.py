@@ -19,6 +19,7 @@ from app.domain.exceptions.autenticacion import (
 from app.services.use_cases.autenticar_usuario_con_bloqueo import (
     AutenticarUsuarioConBloqueoUseCase,
 )
+from app.services.security.jwt_tokens import crear_token_jwt
 
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Autenticación"])
@@ -42,6 +43,8 @@ router = APIRouter(prefix="/api/v1/auth", tags=["Autenticación"])
                             "apellidos": "Gómez",
                             "correo": "laura.gomez@correo.com",
                             "rol": "Cliente",
+                            "token": "<jwt>",
+                            "tipo": "Bearer",
                         },
                         "success": True,
                     }
@@ -160,6 +163,7 @@ def iniciar_sesion(
             "Unable to sign in at this time",
         )
 
+    token = crear_token_jwt(usuario.id, usuario.rol)
     return LoginExitosoResponse(
         message="Login successful",
         data=LoginExitosoData(
@@ -168,6 +172,8 @@ def iniciar_sesion(
             apellidos=usuario.apellidos,
             correo=usuario.correo,
             rol=usuario.rol,
+            token=token,
+            tipo="Bearer",
         ),
         success=True,
     )

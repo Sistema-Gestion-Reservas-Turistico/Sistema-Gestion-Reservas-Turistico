@@ -208,3 +208,17 @@ genera un token nuevo para cuentas
 pendientes, invalida enlaces anteriores y responde igual para correos
 desconocidos o cuentas ya activas. Se permiten hasta tres solicitudes por
 correo por hora (`MAX_REENVIOS_ACTIVACION_POR_HORA`).
+
+## Coordenadas de destinos (HU-12)
+
+`PUT /api/v1/geo/destinos/{id_destino}/coordenadas` registra o reemplaza la
+latitud y longitud de un destino. Requiere `Authorization: Bearer <JWT>` con
+rol `Administrador`. Las coordenadas deben estar dentro de los rangos
+geográficos y del municipio asociado; errores de rango responden `400`, destino
+inexistente `404`, ubicación en otro municipio `409` y fallos de persistencia
+`503`.
+
+El seed idempotente carga el municipio 63690 (Salento) y el destino 15
+(`Reserva Natural Demo`). El punto `4.6372, -75.5712` está dentro de los límites
+de prueba configurados. Define `JWT_SECRET_KEY` con un valor aleatorio de al
+menos 32 caracteres y `MINUTOS_EXPIRACION_JWT` para ajustar la vigencia del JWT.

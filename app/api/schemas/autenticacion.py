@@ -21,6 +21,8 @@ class LoginExitosoData(BaseModel):
     apellidos: str
     correo: str
     rol: str
+    token: str
+    tipo: str
 
 
 class LoginExitosoResponse(ApiResponse[LoginExitosoData]):
