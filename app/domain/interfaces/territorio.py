@@ -44,6 +44,15 @@ class TerritorioRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def consultar_estructura_territorial(
+        self, id_pais: int, id_departamento: int | None = None
+    ) -> tuple[
+        Pais | None,
+        list[tuple[Departamento, list[MunicipioTerritorial]]],
+    ]:
+        raise NotImplementedError
+
+    @abstractmethod
     def listar_municipios_por_departamento(
         self, id_departamento: int
     ) -> list[MunicipioTerritorial]:

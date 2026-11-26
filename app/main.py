@@ -45,6 +45,9 @@ from app.api.routers.geo_destinos_api import router as geo_router
 from app.api.routers.geo_ubicaciones_api import router as geo_ubicaciones_router
 from app.api.routers.geo_autocompletar_api import router as geo_autocompletar_router
 from app.api.routers.geo_municipios_api import router as geo_municipios_router
+from app.api.routers.geo_estructura_territorial_api import (
+    router as geo_estructura_territorial_router,
+)
 
 
 @asynccontextmanager
@@ -69,6 +72,7 @@ app.include_router(geo_router)
 app.include_router(geo_ubicaciones_router)
 app.include_router(geo_autocompletar_router)
 app.include_router(geo_municipios_router)
+app.include_router(geo_estructura_territorial_router)
 
 
 def generar_openapi():

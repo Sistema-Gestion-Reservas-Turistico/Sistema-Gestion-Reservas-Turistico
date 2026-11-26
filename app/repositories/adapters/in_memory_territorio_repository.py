@@ -71,6 +71,40 @@ class InMemoryTerritorioRepository(TerritorioRepository):
                 if departamento.id_pais == id_pais
             ]
 
+    def consultar_estructura_territorial(
+        self, id_pais: int, id_departamento: int | None = None
+    ) -> tuple[
+        Pais | None,
+        list[tuple[Departamento, list[MunicipioTerritorial]]],
+    ]:
+        with self._lock:
+            pais = self._paises.get(id_pais)
+            if pais is None:
+                return None, []
+
+            departamentos = [
+                departamento
+                for departamento in self._departamentos.values()
+                if departamento.id_pais == id_pais
+                and (
+                    id_departamento is None
+                    or departamento.id == id_departamento
+                )
+            ]
+            departamentos.sort(key=lambda item: item.nombre.casefold())
+
+            estructura = []
+            for departamento in departamentos:
+                municipios = [
+                    municipio
+                    for municipio in self._municipios.values()
+                    if municipio.id_departamento == departamento.id
+                ]
+                municipios.sort(key=lambda item: item.nombre.casefold())
+                estructura.append((departamento, municipios))
+
+            return pais, estructura
+
     def listar_municipios_por_departamento(
         self, id_departamento: int
     ) -> list[MunicipioTerritorial]:
