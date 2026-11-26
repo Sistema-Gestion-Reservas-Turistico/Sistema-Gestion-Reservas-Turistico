@@ -1,4 +1,4 @@
-from app.domain.entities.destino import Destino
+from app.domain.entities.destino import ActividadDestino, Destino
 from app.domain.entities.departamento import Departamento
 from app.domain.entities.municipio import MunicipioTerritorial
 from app.domain.interfaces.destino import DestinoRepository
@@ -71,5 +71,27 @@ class CargarDestinosGeograficosUseCase:
                 id_destino=15,
                 nombre="Reserva Natural Demo",
                 id_municipio=63690,
+                descripcion=(
+                    "Reserva natural con senderos ecológicos y miradores."
+                ),
+                tipos_turismo=["AVENTURA", "ECOTURISMO"],
+                actividades=[
+                    ActividadDestino(id=1, nombre="Senderismo"),
+                    ActividadDestino(
+                        id=2, nombre="Observación de aves"
+                    ),
+                ],
+                imagen_principal_url=(
+                    "https://almacenamiento.ejemplo.com/destinos/15.jpg"
+                ),
+                activo=True,
+            )
+        )
+        self._destinos.crear_si_no_existe(
+            Destino(
+                id_destino=16,
+                nombre="Destino inactivo Demo",
+                id_municipio=63690,
+                activo=False,
             )
         )

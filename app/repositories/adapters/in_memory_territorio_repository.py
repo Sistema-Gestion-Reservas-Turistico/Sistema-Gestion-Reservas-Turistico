@@ -147,6 +147,21 @@ class InMemoryTerritorioRepository(TerritorioRepository):
         with self._lock:
             return self._municipios.get(id_municipio)
 
+    def obtener_jerarquia_municipio(
+        self, id_municipio: int
+    ) -> tuple[MunicipioTerritorial, Departamento, Pais] | None:
+        with self._lock:
+            municipio = self._municipios.get(id_municipio)
+            if municipio is None:
+                return None
+            departamento = self._departamentos.get(municipio.id_departamento)
+            if departamento is None:
+                return None
+            pais = self._paises.get(departamento.id_pais)
+            if pais is None:
+                return None
+            return municipio, departamento, pais
+
     def actualizar_disponibilidad_municipio(
         self,
         id_municipio: int,

@@ -69,6 +69,12 @@ class TerritorioRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def obtener_jerarquia_municipio(
+        self, id_municipio: int
+    ) -> tuple[MunicipioTerritorial, Departamento, Pais] | None:
+        raise NotImplementedError
+
+    @abstractmethod
     def actualizar_disponibilidad_municipio(
         self,
         id_municipio: int,

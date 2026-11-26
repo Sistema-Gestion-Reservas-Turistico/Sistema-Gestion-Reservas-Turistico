@@ -24,6 +24,9 @@ from app.services.use_cases.actualizar_disponibilidad_municipio import (
 from app.services.use_cases.registrar_coordenadas_destino import (
     RegistrarCoordenadasDestinoUseCase,
 )
+from app.services.use_cases.consultar_ficha_destino import (
+    ConsultarFichaDestinoUseCase,
+)
 
 
 @lru_cache
@@ -40,6 +43,13 @@ def obtener_caso_registrar_coordenadas_destino() -> (
     RegistrarCoordenadasDestinoUseCase
 ):
     return RegistrarCoordenadasDestinoUseCase(
+        obtener_repositorio_destinos(),
+        obtener_repositorio_territorios(),
+    )
+
+
+def obtener_caso_consultar_ficha_destino() -> ConsultarFichaDestinoUseCase:
+    return ConsultarFichaDestinoUseCase(
         obtener_repositorio_destinos(),
         obtener_repositorio_territorios(),
     )
