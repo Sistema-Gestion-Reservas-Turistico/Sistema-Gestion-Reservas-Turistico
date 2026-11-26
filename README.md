@@ -242,3 +242,13 @@ se ordenan alfabéticamente; un nivel sin ubicaciones responde `200` con
 `success: false` y una lista vacía. Los identificadores no numéricos o el envío
 simultáneo de ambos filtros responden `400`; el token inválido o ausente responde
 `401`, y los errores de persistencia `503`.
+
+## Disponibilidad de municipios (HU-14)
+
+`PATCH /api/v1/geo/municipios/{id_municipio}/disponibilidad` requiere un Bearer
+JWT con rol `Administrador` y recibe `{"habilitado": true}` o
+`{"habilitado": false}`. El cambio conserva el municipio y los destinos
+asociados; los municipios inhabilitados dejan de aparecer en HU-11 y HU-13.
+Una solicitud que repite el estado actual responde `200` sin modificar la fecha
+de actualización. El campo debe ser booleano estricto; los datos inválidos
+responden `400`, municipio inexistente `404` y fallos de persistencia `503`.

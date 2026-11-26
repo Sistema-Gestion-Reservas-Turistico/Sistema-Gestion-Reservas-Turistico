@@ -15,6 +15,9 @@ from app.services.use_cases.consultar_ubicaciones_dinamicas import (
 from app.services.use_cases.autocompletar_ubicaciones import (
     AutocompletarUbicacionesUseCase,
 )
+from app.services.use_cases.actualizar_disponibilidad_municipio import (
+    ActualizarDisponibilidadMunicipioUseCase,
+)
 from app.services.use_cases.registrar_coordenadas_destino import (
     RegistrarCoordenadasDestinoUseCase,
 )
@@ -56,3 +59,11 @@ def obtener_caso_consultar_ubicaciones_dinamicas() -> (
 
 def obtener_caso_autocompletar_ubicaciones() -> AutocompletarUbicacionesUseCase:
     return AutocompletarUbicacionesUseCase(obtener_repositorio_territorios())
+
+
+def obtener_caso_actualizar_disponibilidad_municipio() -> (
+    ActualizarDisponibilidadMunicipioUseCase
+):
+    return ActualizarDisponibilidadMunicipioUseCase(
+        obtener_repositorio_territorios()
+    )

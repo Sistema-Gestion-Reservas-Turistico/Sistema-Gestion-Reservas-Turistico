@@ -1,3 +1,5 @@
+from dataclasses import replace
+from datetime import datetime
 from threading import Lock
 
 from app.domain.entities.departamento import Departamento
@@ -104,3 +106,27 @@ class InMemoryTerritorioRepository(TerritorioRepository):
                 and municipio.id_departamento in self._departamentos
             )
             return sugerencias
+
+    def obtener_municipio(
+        self, id_municipio: int
+    ) -> MunicipioTerritorial | None:
+        with self._lock:
+            return self._municipios.get(id_municipio)
+
+    def actualizar_disponibilidad_municipio(
+        self,
+        id_municipio: int,
+        habilitado: bool,
+        fecha_actualizacion: datetime,
+    ) -> MunicipioTerritorial | None:
+        with self._lock:
+            municipio = self._municipios.get(id_municipio)
+            if municipio is None:
+                return None
+            actualizado = replace(
+                municipio,
+                habilitado=habilitado,
+                fecha_actualizacion=fecha_actualizacion,
+            )
+            self._municipios[id_municipio] = actualizado
+            return actualizado

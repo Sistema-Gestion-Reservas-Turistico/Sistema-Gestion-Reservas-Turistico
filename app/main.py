@@ -44,6 +44,7 @@ from app.api.routers.auth_api import router as auth_router
 from app.api.routers.geo_destinos_api import router as geo_router
 from app.api.routers.geo_ubicaciones_api import router as geo_ubicaciones_router
 from app.api.routers.geo_autocompletar_api import router as geo_autocompletar_router
+from app.api.routers.geo_municipios_api import router as geo_municipios_router
 
 
 @asynccontextmanager
@@ -67,6 +68,7 @@ app.include_router(auth_router)
 app.include_router(geo_router)
 app.include_router(geo_ubicaciones_router)
 app.include_router(geo_autocompletar_router)
+app.include_router(geo_municipios_router)
 
 
 def generar_openapi():
@@ -116,6 +118,7 @@ def generar_openapi():
                 "/api/v1/geo/destinos/{id_destino}/coordenadas",
                 "/api/v1/geo/ubicaciones",
                 "/api/v1/geo/ubicaciones/autocompletar",
+                "/api/v1/geo/municipios/{id_municipio}/disponibilidad",
             }:
                 operation["responses"].pop("422", None)
                 continue
@@ -199,6 +202,18 @@ async def manejar_error_http(request: Request, error: HTTPException):
 async def manejar_error_validacion(
     request: Request, error: RequestValidationError
 ):
+    if request.url.path.startswith("/api/v1/geo/municipios/"):
+        return FastAPIJSONResponse(
+            status_code=400,
+            content={
+                "mensaje": (
+                    "El campo habilitado es obligatorio y debe ser verdadero o falso"
+                ),
+                "data": None,
+                "success": False,
+            },
+        )
+
     if request.url.path.startswith("/api/v1/geo/destinos/"):
         errores = error.errors()
         campo = next(

@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from datetime import datetime
 
 from app.domain.entities.departamento import Departamento
 from app.domain.entities.municipio import MunicipioTerritorial
@@ -50,4 +51,19 @@ class TerritorioRepository(ABC):
 
     @abstractmethod
     def listar_ubicaciones_autocompletar(self) -> list[SugerenciaTerritorial]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def obtener_municipio(
+        self, id_municipio: int
+    ) -> MunicipioTerritorial | None:
+        raise NotImplementedError
+
+    @abstractmethod
+    def actualizar_disponibilidad_municipio(
+        self,
+        id_municipio: int,
+        habilitado: bool,
+        fecha_actualizacion: datetime,
+    ) -> MunicipioTerritorial | None:
         raise NotImplementedError
