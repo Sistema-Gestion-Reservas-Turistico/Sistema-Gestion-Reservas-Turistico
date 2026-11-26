@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+from uuid import uuid4
 from typing import Any
 
 import jwt
@@ -20,6 +21,8 @@ def crear_token_jwt(
         {
             "sub": str(usuario_id),
             "role": rol,
+            "rol": rol,
+            "jti": uuid4().hex,
             "iat": momento,
             "exp": momento + timedelta(minutes=MINUTOS_EXPIRACION_TOKEN),
         },
@@ -33,8 +36,16 @@ def decodificar_token_jwt(token: str) -> dict[str, Any]:
         token,
         JWT_SECRET_KEY,
         algorithms=["HS256"],
-        options={"require": ["sub", "role", "exp"]},
+        options={"require": ["sub", "exp"]},
     )
-    if not claims["sub"].isdigit() or not isinstance(claims["role"], str):
+    rol = claims.get("rol", claims.get("role"))
+    if (
+        not claims["sub"].isdigit()
+        or not isinstance(rol, str)
+        or ("role" in claims and claims["role"] != rol)
+        or ("rol" in claims and claims["rol"] != rol)
+    ):
         raise jwt.InvalidTokenError("Invalid token claims")
+    claims["role"] = rol
+    claims["rol"] = rol
     return claims

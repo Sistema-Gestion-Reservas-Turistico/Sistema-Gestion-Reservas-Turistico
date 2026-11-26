@@ -106,22 +106,22 @@ def test_esquemas_pydantic_de_sesion_validan_respuestas() -> None:
         message="Sesión renovada",
         data=SesionRenovadaData(
             token="token-nuevo",
-            tipo="Bearer",
-            expira_en=1800,
-            inactividad_max=900,
+            token_type="Bearer",
+            expires_in=1800,
+            inactivity_timeout=900,
         ),
     )
     actual = SesionActualApiResponse(
         success=True,
         message="Current session retrieved successfully",
         data=SesionActualData(
-            usuario_id=7,
-            correo="cliente@correo.com",
-            rol="Cliente",
-            inicio_en=ahora,
-            ultima_actividad=ahora,
-            inactividad_max=900,
+            user_id=7,
+            email="cliente@correo.com",
+            role="Cliente",
+            started_at=ahora,
+            last_activity=ahora,
+            inactivity_timeout=900,
         ),
     )
-    assert renovada.data.tipo == "Bearer"
-    assert actual.data.usuario_id == 7
+    assert renovada.data.token_type == "Bearer"
+    assert actual.data.user_id == 7

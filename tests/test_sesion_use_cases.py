@@ -21,7 +21,7 @@ from app.services.use_cases.validar_actividad_sesion import (
 @pytest.fixture
 def contexto() -> tuple[InMemorySesionRepository, datetime, str]:
     repositorio = InMemorySesionRepository()
-    ahora = datetime(2026, 11, 24, 12, 0, tzinfo=timezone.utc)
+    ahora = datetime.now(timezone.utc)
     sesion = CrearSesionUsuarioUseCase(repositorio).ejecutar(
         7, "cliente@correo.com", "Cliente", ahora
     )

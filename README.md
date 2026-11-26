@@ -259,3 +259,46 @@ The response contract uses English JSON keys and messages:
 ```
 
 `GET /api/v1/auth/me` requires `Authorization: Bearer <token>` and returns the authenticated user and current session data. Missing, altered, expired, closed, or mismatched tokens return `401`.
+## Coordenadas de destinos (HU-12)
+
+`PUT /api/v1/geo/destinos/{id_destino}/coordenadas` registra o reemplaza la
+latitud y longitud de un destino. Requiere `Authorization: Bearer <JWT>` con
+rol `Administrador`. Las coordenadas deben estar dentro de los rangos
+geográficos y del municipio asociado; errores de rango responden `400`, destino
+inexistente `404`, ubicación en otro municipio `409` y fallos de persistencia
+`503`.
+
+El seed idempotente carga el municipio 63690 (Salento) y el destino 15
+(`Reserva Natural Demo`). El punto `4.6372, -75.5712` está dentro de los límites
+de prueba configurados. Define `JWT_SECRET_KEY` con un valor aleatorio de al
+menos 32 caracteres y `MINUTOS_EXPIRACION_JWT` para ajustar la vigencia del JWT.
+
+## Autocompletar ubicaciones (HU-13)
+
+`GET /api/v1/geo/ubicaciones/autocompletar` requiere un Bearer JWT válido y
+acepta `q` (mínimo tres caracteres) y `limite` (positivo, por defecto 10).
+Busca departamentos y municipios habilitados sin distinguir mayúsculas ni
+tildes; prioriza prefijos y luego ordena alfabéticamente. Las sugerencias
+municipales incluyen el departamento. Sin coincidencias responde `200` con
+`success: false`; entradas inválidas responden `400` y fallos de persistencia
+`503`.
+
+## Búsqueda dinámica de ubicación (HU-11)
+
+`GET /api/v1/geo/ubicaciones` requiere un Bearer JWT válido y acepta uno de dos
+filtros opcionales: `id_pais` devuelve departamentos y `id_departamento`
+devuelve municipios habilitados. Sin filtros devuelve países. Los resultados
+se ordenan alfabéticamente; un nivel sin ubicaciones responde `200` con
+`success: false` y una lista vacía. Los identificadores no numéricos o el envío
+simultáneo de ambos filtros responden `400`; el token inválido o ausente responde
+`401`, y los errores de persistencia `503`.
+
+## Disponibilidad de municipios (HU-14)
+
+`PATCH /api/v1/geo/municipios/{id_municipio}/disponibilidad` requiere un Bearer
+JWT con rol `Administrador` y recibe `{"habilitado": true}` o
+`{"habilitado": false}`. El cambio conserva el municipio y los destinos
+asociados; los municipios inhabilitados dejan de aparecer en HU-11 y HU-13.
+Una solicitud que repite el estado actual responde `200` sin modificar la fecha
+de actualización. El campo debe ser booleano estricto; los datos inválidos
+responden `400`, municipio inexistente `404` y fallos de persistencia `503`.

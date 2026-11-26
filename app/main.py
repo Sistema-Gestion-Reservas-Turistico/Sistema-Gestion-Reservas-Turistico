@@ -5,6 +5,7 @@ from fastapi import Body, FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.exceptions import HTTPException
 from fastapi.requests import Request
+from fastapi.responses import JSONResponse as FastAPIJSONResponse
 from fastapi.openapi.utils import get_openapi
 from app.api.responses import (
     ApiErrorResponse,
@@ -35,12 +36,22 @@ from app.api.routers.parametros_alojamiento_alimentacion_api import (
     router as alojamiento_alimentacion_router,
 )
 from app.api.dependencies.usuarios import obtener_caso_cargar_parametros_usuarios
+from app.api.dependencies.destinos import (
+    obtener_caso_cargar_destinos_geograficos,
+)
 from app.api.routers.usuarios_api import router as usuarios_router
 from app.api.routers.auth_api import router as auth_router
 from app.domain.exceptions.sesion import (
     PersistenciaSesionError,
     SesionCerradaPorInactividadError,
     SesionInvalidaOCerradaError,
+)
+from app.api.routers.geo_destinos_api import router as geo_router
+from app.api.routers.geo_ubicaciones_api import router as geo_ubicaciones_router
+from app.api.routers.geo_autocompletar_api import router as geo_autocompletar_router
+from app.api.routers.geo_municipios_api import router as geo_municipios_router
+from app.api.routers.geo_estructura_territorial_api import (
+    router as geo_estructura_territorial_router,
 )
 
 
@@ -50,6 +61,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     obtener_caso_cargar_parametros_pagos().ejecutar()
     obtener_caso_cargar_parametros_alojamiento_alimentacion().ejecutar()
     obtener_caso_cargar_parametros_usuarios().ejecutar()
+    obtener_caso_cargar_destinos_geograficos().ejecutar()
     yield
 
 
@@ -61,12 +73,25 @@ app.include_router(consulta_parametros_router)
 app.include_router(alojamiento_alimentacion_router)
 app.include_router(usuarios_router)
 app.include_router(auth_router)
+app.include_router(geo_router)
+app.include_router(geo_ubicaciones_router)
+app.include_router(geo_autocompletar_router)
+app.include_router(geo_municipios_router)
+app.include_router(geo_estructura_territorial_router)
 
 _RUTAS_AUTH = {
     "/api/v1/auth/login",
     "/api/v1/auth/me",
     "/api/v1/auth/sesion/mantener",
     "/api/v1/auth/logout",
+}
+_RUTAS_GEO_SIN_422 = {
+    "/api/v1/geo/destinos/{id_destino}",
+    "/api/v1/geo/destinos/{id_destino}/coordenadas",
+    "/api/v1/geo/ubicaciones",
+    "/api/v1/geo/ubicaciones/estructura",
+    "/api/v1/geo/ubicaciones/autocompletar",
+    "/api/v1/geo/municipios/{id_municipio}/disponibilidad",
 }
 
 
@@ -151,14 +176,19 @@ def generar_openapi():
                         }
                     },
                 }
-            operation["responses"]["422"] = respuesta_validacion.copy()
+            if ruta in _RUTAS_GEO_SIN_422:
+                operation["responses"].pop("422", None)
+                continue
+            else:
+                operation["responses"]["422"] = respuesta_validacion.copy()
             if ruta == "/api/v1/auth/login":
                 operation["responses"].pop("422", None)
                 operation["responses"]["400"] = {
                     **respuesta_validacion,
                     "description": "Email or password field is missing or invalid",
                 }
-            operation["responses"].setdefault("500", respuesta_interna)
+            if ruta not in _RUTAS_GEO_SIN_422:
+                operation["responses"].setdefault("500", respuesta_interna)
             for codigo, response in operation["responses"].items():
                 status_code = int(codigo) if str(codigo).isdigit() else 500
                 for media_type in response.get("content", {}).values():
@@ -174,26 +204,6 @@ def generar_openapi():
                             ejemplo["value"] = _envolver_ejemplo(
                                 ejemplo["value"], status_code
                             )
-    esquema["paths"]["/api/v1/auth/login"]["post"]["responses"]["200"][
-        "content"
-    ]["application/json"]["example"] = {
-        "success": True,
-        "message": "Login successful",
-        "timestamp": utc_timestamp(),
-        "errorCode": None,
-        "data": {
-            "token": "<signed-jwt>",
-            "token_type": "Bearer",
-            "expires_in": 1800,
-            "inactivity_timeout": 900,
-            "user": {
-                "id": 101,
-                "first_name": "Laura",
-                "last_name": "Gomez",
-                "role": "Cliente",
-            },
-        },
-    }
     app.openapi_schema = esquema
     return esquema
 
@@ -280,6 +290,38 @@ async def manejar_error_validacion(
         else:
             mensaje = "The login data is invalid"
         return api_error_response(400, mensaje, "VALIDATION_ERROR")
+
+    if request.url.path.startswith("/api/v1/geo/municipios/"):
+        return FastAPIJSONResponse(
+            status_code=400,
+            content={
+                "mensaje": (
+                    "El campo habilitado es obligatorio y debe ser verdadero o falso"
+                ),
+                "data": None,
+                "success": False,
+            },
+        )
+
+    if request.url.path.startswith("/api/v1/geo/destinos/"):
+        errores = error.errors()
+        campo = next(
+            (
+                str(item.get("loc", ())[-1])
+                for item in errores
+                if item.get("loc") and item.get("loc", ())[-1] in {"latitud", "longitud"}
+            ),
+            "latitud",
+        )
+        mensaje = (
+            "La latitud debe estar entre -90 y 90"
+            if campo == "latitud"
+            else "La longitud debe estar entre -180 y 180"
+        )
+        return FastAPIJSONResponse(
+            status_code=400,
+            content={"mensaje": mensaje, "data": None, "success": False},
+        )
 
     if request.url.path == "/api/v1/usuarios/registro":
         return api_error_response(400, "Registration data is invalid", "VALIDATION_ERROR")

@@ -32,6 +32,14 @@ class LoginExitosoData(BaseModel):
     expires_in: int
     inactivity_timeout: int
     user: UsuarioAutenticadoData
+    id: int
+    nombres: str
+    apellidos: str
+    correo: str
+    rol: str
+    tipo: str
+    expira_en: int
+    inactividad_max: int
 
 
 class LoginExitosoResponse(ApiResponse[LoginExitosoData]):

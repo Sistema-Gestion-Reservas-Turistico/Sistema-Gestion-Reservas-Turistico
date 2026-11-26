@@ -55,6 +55,40 @@ router = APIRouter(prefix="/api/v1/auth", tags=["Autenticación"])
     status_code=status.HTTP_200_OK,
     response_model=LoginExitosoResponse,
     responses={
+        status.HTTP_200_OK: {
+            "model": LoginExitosoResponse,
+            "description": "Autenticación exitosa para una cuenta activa.",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "success": True,
+                        "message": "Login successful",
+                        "timestamp": "2026-11-26T12:00:00Z",
+                        "errorCode": None,
+                        "data": {
+                            "token": "<signed-jwt>",
+                            "token_type": "Bearer",
+                            "expires_in": 1800,
+                            "inactivity_timeout": 900,
+                            "id": 101,
+                            "nombres": "Laura",
+                            "apellidos": "Gómez",
+                            "correo": "laura.gomez@correo.com",
+                            "rol": "Cliente",
+                            "tipo": "Bearer",
+                            "expira_en": 1800,
+                            "inactividad_max": 900,
+                            "user": {
+                                "id": 101,
+                                "first_name": "Laura",
+                                "last_name": "Gómez",
+                                "role": "Cliente",
+                            },
+                        },
+                    }
+                }
+            },
+        },
         status.HTTP_401_UNAUTHORIZED: {
             "model": LoginErrorResponse,
             "description": "Credenciales incorrectas.",
@@ -126,6 +160,14 @@ def iniciar_sesion(
             token_type=sesion.tipo,
             expires_in=sesion.expira_en,
             inactivity_timeout=sesion.inactividad_max,
+            id=usuario.id,
+            nombres=usuario.nombres,
+            apellidos=usuario.apellidos,
+            correo=usuario.correo,
+            rol=usuario.rol,
+            tipo=sesion.tipo,
+            expira_en=sesion.expira_en,
+            inactividad_max=sesion.inactividad_max,
             user=UsuarioAutenticadoData(
                 id=usuario.id,
                 first_name=usuario.nombres,

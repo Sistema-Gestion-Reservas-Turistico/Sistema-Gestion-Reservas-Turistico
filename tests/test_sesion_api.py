@@ -35,9 +35,9 @@ def iniciar_sesion(cliente: TestClient) -> tuple[str, dict]:
 
 def test_login_emite_token_y_registra_su_hash(cliente: TestClient) -> None:
     token, data = iniciar_sesion(cliente)
-    assert data["tipo"] == "Bearer"
-    assert data["expira_en"] == 1800
-    assert data["inactividad_max"] == 900
+    assert data["token_type"] == "Bearer"
+    assert data["expires_in"] == 1800
+    assert data["inactivity_timeout"] == 900
     sesion = obtener_repositorio_sesiones().buscar_por_token_hash(
         hashlib.sha256(token.encode("utf-8")).hexdigest()
     )
@@ -52,8 +52,8 @@ def test_me_actualiza_actividad(cliente: TestClient) -> None:
     )
     assert respuesta.status_code == 200
     data = respuesta.json()["data"]
-    assert data["correo"] == "cliente.activo@correo.com"
-    assert data["inactividad_max"] == 900
+    assert data["email"] == "cliente.activo@correo.com"
+    assert data["inactivity_timeout"] == 900
 
 
 def test_inactividad_cierra_la_sesion_con_codigo_especifico(
@@ -71,7 +71,7 @@ def test_inactividad_cierra_la_sesion_con_codigo_especifico(
     body = respuesta.json()
     assert respuesta.status_code == 401
     assert body["errorCode"] == "SESION_INACTIVA"
-    assert body["data"] == {"codigo": "SESION_INACTIVA"}
+    assert body["data"] == {"code": "SESION_INACTIVA"}
     assert body["message"] == "Tu sesión se cerró por inactividad. Inicia sesión de nuevo"
 
 
@@ -83,7 +83,7 @@ def test_mantener_rota_token_y_actualiza_sesion(cliente: TestClient) -> None:
     )
     token_nuevo = respuesta.json()["data"]["token"]
     assert respuesta.status_code == 200
-    assert respuesta.json()["message"] == "Sesión renovada"
+    assert respuesta.json()["message"] == "Session renewed successfully"
     assert token_nuevo != token
     anterior = cliente.get(
         "/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"}
@@ -101,7 +101,7 @@ def test_logout_invalida_el_token(cliente: TestClient) -> None:
         "/api/v1/auth/logout", headers={"Authorization": f"Bearer {token}"}
     )
     assert respuesta.status_code == 200
-    assert respuesta.json()["data"]["motivo_cierre"] == "LOGOUT"
+    assert respuesta.json()["data"]["close_reason"] == "LOGOUT"
     posterior = cliente.get(
         "/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"}
     )
