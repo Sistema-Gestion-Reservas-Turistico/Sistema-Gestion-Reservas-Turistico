@@ -1,0 +1,17 @@
+  Development[m
+  HU01b-administracion-valores-categorias[m
+  HU02-administrar-parametros-transporte[m
+  HU03-administrar-parametros-pagos[m
+  HU04-administrar-parametros-alojamiento-alimentacion[m
+  HU06-registrar-usuario[m
+  HU07-bloquear-cuenta-intentos-fallidos[m
+  HU08-activar-cuenta-correo[m
+  HU11-buscar-ubicacion-dinamica[m
+  HU12-registrar-coordenadas-destino[m
+  HU13-autocompletar-ubicaciones[m
+  HU14-habilitar-inhabilitar-municipios[m
+* [32mHU15-consultar-estructura-territorial[m
+  Testing[m
+  feature/HU-10-cerrar-sesion-inactividad[m
+  master[m
+  testing[m

@@ -209,6 +209,56 @@ pendientes, invalida enlaces anteriores y responde igual para correos
 desconocidos o cuentas ya activas. Se permiten hasta tres solicitudes por
 correo por hora (`MAX_REENVIOS_ACTIVACION_POR_HORA`).
 
+## Cierre de sesión por inactividad (HU-10)
+
+El login de `POST /api/v1/auth/login` crea una sesión y devuelve el token como
+`Bearer`, junto con la vigencia en segundos (`expira_en`, por defecto 1800) y
+el límite de inactividad (`inactividad_max`, por defecto 900). Se configuran con
+`MINUTOS_EXPIRACION_TOKEN` y `MINUTOS_INACTIVIDAD_SESION`.
+
+- `GET /api/v1/auth/me` requiere `Authorization: Bearer <token>`, actualiza la
+  última actividad y devuelve los datos de la sesión.
+- `POST /api/v1/auth/sesion/mantener` requiere Bearer, rota el token e invalida
+  el anterior.
+- `POST /api/v1/auth/logout` requiere Bearer y cierra explícitamente la sesión
+  con motivo `LOGOUT`.
+
+Las sesiones vencidas, inexistentes o cerradas por logout responden `401`.
+Cuando se supera el límite de inactividad, la sesión se cierra con motivo
+`INACTIVIDAD` y responde `401` con `errorCode: "SESION_INACTIVA"` y
+`data: {"codigo": "SESION_INACTIVA"}`. Los fallos del repositorio de sesiones
+responden `503`. El repositorio en memoria solo almacena hashes SHA-256 de los
+tokens. En rutas administrativas, un Bearer presente se valida y determina el
+rol; si no se envía, se conserva el fallback transitorio `X-Rol`.
+
+## User sign-in (HU-09)
+
+`POST /api/v1/auth/login` accepts `email` and `password` (the previous `correo` request key is also accepted for compatibility). It verifies the password hash and only allows active accounts. Email matching is case-insensitive, and invalid email/password pairs return the same generic `401` message. Pending accounts receive `403`; missing login fields receive `400`.
+
+Successful login returns a signed HS256 JWT with the user ID (`sub`) and role (`role`) claims. It expires after 30 minutes by default; configure `MINUTOS_EXPIRACION_TOKEN` and set `JWT_SECRET_KEY` to a random secret of at least 32 characters. HU-10's session repository stores only the SHA-256 hash of each token and continues enforcing the 15-minute inactivity limit and token rotation.
+
+The response contract uses English JSON keys and messages:
+
+```json
+{
+  "success": true,
+  "message": "Login successful",
+  "data": {
+    "token": "<signed-jwt>",
+    "token_type": "Bearer",
+    "expires_in": 1800,
+    "inactivity_timeout": 900,
+    "user": {
+      "id": 101,
+      "first_name": "Laura",
+      "last_name": "Gomez",
+      "role": "Cliente"
+    }
+  }
+}
+```
+
+`GET /api/v1/auth/me` requires `Authorization: Bearer <token>` and returns the authenticated user and current session data. Missing, altered, expired, closed, or mismatched tokens return `401`.
 ## Coordenadas de destinos (HU-12)
 
 `PUT /api/v1/geo/destinos/{id_destino}/coordenadas` registra o reemplaza la

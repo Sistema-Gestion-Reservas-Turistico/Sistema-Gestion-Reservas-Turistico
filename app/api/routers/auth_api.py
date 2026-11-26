@@ -1,15 +1,38 @@
 from datetime import timedelta, timezone
 
 from fastapi import APIRouter, Depends, Request, status
-from app.api.responses import JSONResponse
+from app.api.responses import JSONResponse, api_error_response
 
-from app.api.dependencies.usuarios import obtener_caso_autenticar_usuario
+from app.api.dependencies.usuarios import (
+    obtener_caso_autenticar_usuario,
+    obtener_repositorio_usuarios,
+)
+from app.api.dependencies.sesion import (
+    obtener_caso_crear_sesion,
+    obtener_caso_cerrar_sesion,
+    obtener_caso_mantener_sesion,
+    obtener_sesion_activa,
+    obtener_token_bearer,
+)
 from app.api.schemas.autenticacion import (
     LoginErrorResponse,
     LoginExitosoData,
     LoginExitosoResponse,
     LoginRequestSchema,
+    UsuarioAutenticadoData,
 )
+from app.api.schemas.sesion import (
+    CerrarSesionApiResponse,
+    CerrarSesionData,
+    SesionActualApiResponse,
+    SesionActualData,
+    SesionErrorResponse,
+    SesionInactivaErrorResponse,
+    SesionRenovadaApiResponse,
+    SesionRenovadaData,
+)
+from app.config import MINUTOS_INACTIVIDAD_SESION
+from app.domain.entities.sesion import SesionUsuario
 from app.domain.exceptions.autenticacion import (
     CuentaBloqueadaTemporalmenteError,
     CuentaPendienteActivacionError,
@@ -19,7 +42,9 @@ from app.domain.exceptions.autenticacion import (
 from app.services.use_cases.autenticar_usuario_con_bloqueo import (
     AutenticarUsuarioConBloqueoUseCase,
 )
-from app.services.security.jwt_tokens import crear_token_jwt
+from app.services.use_cases.cerrar_sesion import CerrarSesionUseCase
+from app.services.use_cases.crear_sesion_usuario import CrearSesionUsuarioUseCase
+from app.services.use_cases.mantener_sesion import MantenerSesionUseCase
 
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Autenticación"])
@@ -36,90 +61,53 @@ router = APIRouter(prefix="/api/v1/auth", tags=["Autenticación"])
             "content": {
                 "application/json": {
                     "example": {
-                        "mensaje": "Inicio de sesión exitoso",
+                        "success": True,
+                        "message": "Login successful",
+                        "timestamp": "2026-11-26T12:00:00Z",
+                        "errorCode": None,
                         "data": {
+                            "token": "<signed-jwt>",
+                            "token_type": "Bearer",
+                            "expires_in": 1800,
+                            "inactivity_timeout": 900,
                             "id": 101,
                             "nombres": "Laura",
                             "apellidos": "Gómez",
                             "correo": "laura.gomez@correo.com",
                             "rol": "Cliente",
-                            "token": "<jwt>",
                             "tipo": "Bearer",
+                            "expira_en": 1800,
+                            "inactividad_max": 900,
+                            "user": {
+                                "id": 101,
+                                "first_name": "Laura",
+                                "last_name": "Gómez",
+                                "role": "Cliente",
+                            },
                         },
-                        "success": True,
                     }
                 }
             },
         },
         status.HTTP_401_UNAUTHORIZED: {
             "model": LoginErrorResponse,
-            "description": "Correo o contraseña incorrectos.",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "mensaje": "Correo o contraseña incorrectos",
-                        "data": {"intentos_restantes": 2},
-                        "success": False,
-                    }
-                }
-            },
+            "description": "Credenciales incorrectas.",
         },
         status.HTTP_403_FORBIDDEN: {
             "model": LoginErrorResponse,
-            "description": "La cuenta aún no ha sido activada.",
+            "description": "Cuenta pendiente de activación.",
         },
         status.HTTP_423_LOCKED: {
             "model": LoginErrorResponse,
-            "description": "La cuenta se bloqueó temporalmente por intentos fallidos.",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "mensaje": (
-                            "El inicio de sesión con este correo está bloqueado "
-                            "temporalmente por varios intentos fallidos. Intenta de "
-                            "nuevo en 15 minutos"
-                        ),
-                        "data": {
-                            "bloqueada_hasta": "2026-11-17T11:30:00-05:00",
-                            "minutos_restantes": 15,
-                        },
-                        "success": False,
-                    }
-                }
-            },
+            "description": "Cuenta bloqueada temporalmente.",
         },
         status.HTTP_503_SERVICE_UNAVAILABLE: {
             "model": LoginErrorResponse,
-            "description": "No fue posible consultar o guardar el estado de seguridad.",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "mensaje": "No fue posible iniciar sesión",
-                        "data": None,
-                        "success": False,
-                    }
-                }
-            },
+            "description": "Servicio no disponible.",
         },
     },
     summary="Iniciar sesión",
-    description=(
-        "Autentica una cuenta activa y registra eventos de seguridad. Tras "
-        "MAX_INTENTOS_FALLIDOS_LOGIN intentos fallidos (por defecto 5), la cuenta "
-        "queda bloqueada durante MINUTOS_BLOQUEO_LOGIN (por defecto 15). El "
-        "contador se reinicia al expirar el bloqueo, al transcurrir el periodo "
-        "sin nuevos intentos o tras credenciales correctas. El control es "
-        "independiente de si el correo está registrado. Para cuentas existentes "
-        "se envía una sola notificación por bloqueo. Ejemplo del correo: "
-        "Asunto: Bloqueo temporal de tu cuenta.\n\n"
-        "Hola Laura,\n"
-        "Detectamos varios intentos fallidos de inicio de sesión en tu cuenta y "
-        "la bloqueamos temporalmente por seguridad.\n"
-        "Bloqueo: 17/11/2026 11:15\n"
-        "Podrás volver a intentarlo a las 11:30.\n"
-        "Si fuiste tú, espera a que termine el bloqueo e ingresa con tu contraseña. "
-        "Si no reconoces esta actividad, comunícate con nosotros."
-    ),
+    description="Autentica al usuario y crea una sesión activa.",
 )
 def iniciar_sesion(
     solicitud: LoginRequestSchema,
@@ -127,6 +115,7 @@ def iniciar_sesion(
     caso: AutenticarUsuarioConBloqueoUseCase = Depends(
         obtener_caso_autenticar_usuario
     ),
+    caso_sesion: CrearSesionUsuarioUseCase = Depends(obtener_caso_crear_sesion),
 ) -> LoginExitosoResponse | JSONResponse:
     ip_origen = _obtener_ip_origen(request)
     try:
@@ -135,7 +124,7 @@ def iniciar_sesion(
         return _error(
             status.HTTP_401_UNAUTHORIZED,
             "The email or password is incorrect",
-            {"intentos_restantes": error.intentos_restantes},
+            {"attempts_remaining": error.intentos_restantes},
         )
     except CuentaBloqueadaTemporalmenteError as error:
         mensaje = (
@@ -146,16 +135,16 @@ def iniciar_sesion(
             status.HTTP_423_LOCKED,
             mensaje,
             {
-                "bloqueada_hasta": error.bloqueada_hasta.astimezone(
+                "locked_until": error.bloqueada_hasta.astimezone(
                     timezone(timedelta(hours=-5), name="COT")
                 ).isoformat(),
-                "minutos_restantes": error.minutos_restantes,
+                "minutes_remaining": error.minutos_restantes,
             },
         )
     except CuentaPendienteActivacionError:
         return _error(
             status.HTTP_403_FORBIDDEN,
-            "The account has not been activated",
+            "Activate your account using the link sent to your email",
         )
     except PersistenciaSeguridadLoginError:
         return _error(
@@ -163,19 +152,136 @@ def iniciar_sesion(
             "Unable to sign in at this time",
         )
 
-    token = crear_token_jwt(usuario.id, usuario.rol)
+    sesion = caso_sesion.ejecutar(usuario.id, usuario.correo, usuario.rol)
     return LoginExitosoResponse(
         message="Login successful",
         data=LoginExitosoData(
+            token=sesion.token,
+            token_type=sesion.tipo,
+            expires_in=sesion.expira_en,
+            inactivity_timeout=sesion.inactividad_max,
             id=usuario.id,
             nombres=usuario.nombres,
             apellidos=usuario.apellidos,
             correo=usuario.correo,
             rol=usuario.rol,
-            token=token,
-            tipo="Bearer",
+            tipo=sesion.tipo,
+            expira_en=sesion.expira_en,
+            inactividad_max=sesion.inactividad_max,
+            user=UsuarioAutenticadoData(
+                id=usuario.id,
+                first_name=usuario.nombres,
+                last_name=usuario.apellidos,
+                role=usuario.rol,
+            ),
         ),
         success=True,
+    )
+
+
+@router.get(
+    "/me",
+    response_model=SesionActualApiResponse,
+    responses={
+        status.HTTP_401_UNAUTHORIZED: {
+            "model": SesionInactivaErrorResponse,
+            "description": "Sesión inválida o inactiva.",
+        },
+        status.HTTP_503_SERVICE_UNAVAILABLE: {
+            "model": SesionErrorResponse,
+            "description": "Validación de sesión no disponible.",
+        },
+    },
+    summary="Consultar sesión actual",
+)
+def obtener_sesion_actual(
+    sesion: SesionUsuario = Depends(obtener_sesion_activa),
+    usuarios=Depends(obtener_repositorio_usuarios),
+) -> SesionActualApiResponse | JSONResponse:
+    usuario = usuarios.buscar_por_id(sesion.usuario_id)
+    if usuario is None:
+        return api_error_response(401, "Authentication is required", "UNAUTHORIZED")
+    return SesionActualApiResponse(
+        success=True,
+        message="Current session retrieved successfully",
+        data=SesionActualData(
+            user_id=sesion.usuario_id,
+            email=sesion.correo,
+            role=sesion.rol,
+            started_at=sesion.inicio_en,
+            last_activity=sesion.ultima_actividad,
+            inactivity_timeout=MINUTOS_INACTIVIDAD_SESION * 60,
+            user=UsuarioAutenticadoData(
+                id=usuario.id,
+                first_name=usuario.nombres,
+                last_name=usuario.apellidos,
+                role=usuario.rol,
+            ),
+        ),
+    )
+
+
+@router.post(
+    "/sesion/mantener",
+    response_model=SesionRenovadaApiResponse,
+    responses={
+        status.HTTP_401_UNAUTHORIZED: {
+            "model": SesionInactivaErrorResponse,
+            "description": "Token inválido o sesión cerrada.",
+        },
+        status.HTTP_503_SERVICE_UNAVAILABLE: {
+            "model": SesionErrorResponse,
+            "description": "Validación de sesión no disponible.",
+        },
+    },
+    summary="Mantener sesión",
+    description="Renueva el token y actualiza la última actividad.",
+)
+def mantener_sesion(
+    token: str = Depends(obtener_token_bearer),
+    caso: MantenerSesionUseCase = Depends(obtener_caso_mantener_sesion),
+) -> SesionRenovadaApiResponse:
+    renovada = caso.ejecutar(token)
+    return SesionRenovadaApiResponse(
+        success=True,
+        message="Session renewed successfully",
+        data=SesionRenovadaData(
+            token=renovada.token,
+            token_type=renovada.tipo,
+            expires_in=renovada.expira_en,
+            inactivity_timeout=renovada.inactividad_max,
+        ),
+    )
+
+
+@router.post(
+    "/logout",
+    response_model=CerrarSesionApiResponse,
+    responses={
+        status.HTTP_401_UNAUTHORIZED: {
+            "model": SesionInactivaErrorResponse,
+            "description": "Token inválido o sesión cerrada.",
+        },
+        status.HTTP_503_SERVICE_UNAVAILABLE: {
+            "model": SesionErrorResponse,
+            "description": "Validación de sesión no disponible.",
+        },
+    },
+    summary="Cerrar sesión",
+)
+def cerrar_sesion(
+    token: str = Depends(obtener_token_bearer),
+    caso: CerrarSesionUseCase = Depends(obtener_caso_cerrar_sesion),
+) -> CerrarSesionApiResponse:
+    cerrada = caso.ejecutar(token)
+    return CerrarSesionApiResponse(
+        success=True,
+        message="Session closed successfully",
+        data=CerrarSesionData(
+            message="Session closed successfully",
+            close_reason=cerrada.motivo_cierre,
+            closed_at=cerrada.cerrada_en,
+        ),
     )
 
 
