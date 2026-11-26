@@ -5,6 +5,7 @@ from fastapi import Body, FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.exceptions import HTTPException
 from fastapi.requests import Request
+from fastapi.responses import JSONResponse as FastAPIJSONResponse
 from fastapi.openapi.utils import get_openapi
 from app.api.responses import (
     ApiErrorResponse,
@@ -35,8 +36,18 @@ from app.api.routers.parametros_alojamiento_alimentacion_api import (
     router as alojamiento_alimentacion_router,
 )
 from app.api.dependencies.usuarios import obtener_caso_cargar_parametros_usuarios
+from app.api.dependencies.destinos import (
+    obtener_caso_cargar_destinos_geograficos,
+)
 from app.api.routers.usuarios_api import router as usuarios_router
 from app.api.routers.auth_api import router as auth_router
+from app.api.routers.geo_destinos_api import router as geo_router
+from app.api.routers.geo_ubicaciones_api import router as geo_ubicaciones_router
+from app.api.routers.geo_autocompletar_api import router as geo_autocompletar_router
+from app.api.routers.geo_municipios_api import router as geo_municipios_router
+from app.api.routers.geo_estructura_territorial_api import (
+    router as geo_estructura_territorial_router,
+)
 
 
 @asynccontextmanager
@@ -45,6 +56,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     obtener_caso_cargar_parametros_pagos().ejecutar()
     obtener_caso_cargar_parametros_alojamiento_alimentacion().ejecutar()
     obtener_caso_cargar_parametros_usuarios().ejecutar()
+    obtener_caso_cargar_destinos_geograficos().ejecutar()
     yield
 
 
@@ -56,6 +68,11 @@ app.include_router(consulta_parametros_router)
 app.include_router(alojamiento_alimentacion_router)
 app.include_router(usuarios_router)
 app.include_router(auth_router)
+app.include_router(geo_router)
+app.include_router(geo_ubicaciones_router)
+app.include_router(geo_autocompletar_router)
+app.include_router(geo_municipios_router)
+app.include_router(geo_estructura_territorial_router)
 
 
 def generar_openapi():
@@ -97,9 +114,17 @@ def generar_openapi():
             }
         },
     }
-    for path_item in esquema["paths"].values():
+    for ruta, path_item in esquema["paths"].items():
         for operation in path_item.values():
             if not isinstance(operation, dict) or "responses" not in operation:
+                continue
+            if ruta in {
+                "/api/v1/geo/destinos/{id_destino}/coordenadas",
+                "/api/v1/geo/ubicaciones",
+                "/api/v1/geo/ubicaciones/autocompletar",
+                "/api/v1/geo/municipios/{id_municipio}/disponibilidad",
+            }:
+                operation["responses"].pop("422", None)
                 continue
             operation["responses"]["422"] = validation_response.copy()
             operation["responses"].setdefault(
@@ -181,6 +206,38 @@ async def manejar_error_http(request: Request, error: HTTPException):
 async def manejar_error_validacion(
     request: Request, error: RequestValidationError
 ):
+    if request.url.path.startswith("/api/v1/geo/municipios/"):
+        return FastAPIJSONResponse(
+            status_code=400,
+            content={
+                "mensaje": (
+                    "El campo habilitado es obligatorio y debe ser verdadero o falso"
+                ),
+                "data": None,
+                "success": False,
+            },
+        )
+
+    if request.url.path.startswith("/api/v1/geo/destinos/"):
+        errores = error.errors()
+        campo = next(
+            (
+                str(item.get("loc", ())[-1])
+                for item in errores
+                if item.get("loc") and item.get("loc", ())[-1] in {"latitud", "longitud"}
+            ),
+            "latitud",
+        )
+        mensaje = (
+            "La latitud debe estar entre -90 y 90"
+            if campo == "latitud"
+            else "La longitud debe estar entre -180 y 180"
+        )
+        return FastAPIJSONResponse(
+            status_code=400,
+            content={"mensaje": mensaje, "data": None, "success": False},
+        )
+
     if request.url.path == "/api/v1/usuarios/registro":
         return api_error_response(400, "Registration data is invalid", "VALIDATION_ERROR")
 
