@@ -1,4 +1,4 @@
-from datetime import timedelta, timezone
+﻿from datetime import timedelta, timezone
 
 from fastapi import APIRouter, Depends, Request, status
 from app.api.responses import JSONResponse, api_error_response
@@ -149,7 +149,7 @@ def iniciar_sesion(
     except PersistenciaSeguridadLoginError:
         return _error(
             status.HTTP_503_SERVICE_UNAVAILABLE,
-            "Unable to sign in at this time",
+            "No fue posible iniciar sesión",
         )
 
     sesion = caso_sesion.ejecutar(usuario.id, usuario.correo, usuario.rol)
