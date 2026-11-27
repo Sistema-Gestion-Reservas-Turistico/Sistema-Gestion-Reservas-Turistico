@@ -25,6 +25,7 @@ from app.services.use_cases.activar_cuenta_por_token import (
     ActivarCuentaPorTokenUseCase,
 )
 from app.services.use_cases.cargar_parametros_usuarios import CargarParametrosUsuarios
+from app.services.use_cases.cargar_usuario_administrador import CargarUsuarioAdministrador
 from app.services.use_cases.registrar_usuario import RegistrarUsuarioUseCase
 from app.services.use_cases.reenviar_activacion_cuenta import (
     ReenviarActivacionCuentaUseCase,
@@ -51,6 +52,10 @@ def obtener_caso_cargar_parametros_usuarios() -> CargarParametrosUsuarios:
         obtener_repositorio_valores_categoria(),
         obtener_repositorio_usuarios(),
     )
+
+
+def obtener_caso_cargar_usuario_administrador() -> CargarUsuarioAdministrador:
+    return CargarUsuarioAdministrador(obtener_repositorio_usuarios())
 
 
 @lru_cache

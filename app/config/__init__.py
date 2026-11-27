@@ -15,6 +15,8 @@ JWT_SECRET_KEY = os.getenv(
     "JWT_SECRET_KEY", "local-development-secret-change-before-deploy"
 )
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")
+ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "").strip().casefold()
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "")
 
 if MAX_INTENTOS_FALLIDOS_LOGIN < 1:
     raise ValueError("MAX_INTENTOS_FALLIDOS_LOGIN debe ser mayor que cero")
@@ -30,3 +32,5 @@ if MINUTOS_EXPIRACION_TOKEN < 1:
     raise ValueError("MINUTOS_EXPIRACION_TOKEN debe ser mayor que cero")
 if len(JWT_SECRET_KEY) < 32:
     raise ValueError("JWT_SECRET_KEY debe tener al menos 32 caracteres")
+if bool(ADMIN_EMAIL) != bool(ADMIN_PASSWORD):
+    raise ValueError("ADMIN_EMAIL and ADMIN_PASSWORD must be configured together")

@@ -34,9 +34,14 @@ from app.api.dependencies.parametros_alojamiento_alimentacion import (
 from app.api.routers.parametros_alojamiento_alimentacion_api import (
     router as alojamiento_alimentacion_router,
 )
-from app.api.dependencies.usuarios import obtener_caso_cargar_parametros_usuarios
+from app.api.dependencies.usuarios import (
+    obtener_caso_cargar_parametros_usuarios,
+    obtener_caso_cargar_usuario_administrador,
+)
 from app.api.routers.usuarios_api import router as usuarios_router
 from app.api.routers.auth_api import router as auth_router
+from app.api.dependencies.destinations import obtener_caso_cargar_parametros_turismo
+from app.api.routers.destinations_api import router as destinations_router
 from app.domain.exceptions.sesion import (
     PersistenciaSesionError,
     SesionCerradaPorInactividadError,
@@ -50,6 +55,8 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     obtener_caso_cargar_parametros_pagos().ejecutar()
     obtener_caso_cargar_parametros_alojamiento_alimentacion().ejecutar()
     obtener_caso_cargar_parametros_usuarios().ejecutar()
+    obtener_caso_cargar_usuario_administrador().ejecutar()
+    obtener_caso_cargar_parametros_turismo().ejecutar()
     yield
 
 
@@ -61,6 +68,7 @@ app.include_router(consulta_parametros_router)
 app.include_router(alojamiento_alimentacion_router)
 app.include_router(usuarios_router)
 app.include_router(auth_router)
+app.include_router(destinations_router)
 
 _RUTAS_AUTH = {
     "/api/v1/auth/login",
@@ -158,6 +166,12 @@ def generar_openapi():
                     **respuesta_validacion,
                     "description": "Email or password field is missing or invalid",
                 }
+            elif ruta.startswith("/api/v1/geo/destinos"):
+                operation["responses"].pop("422", None)
+                operation["responses"]["400"] = {
+                    **respuesta_validacion,
+                    "description": "The destination request is invalid",
+                }
             operation["responses"].setdefault("500", respuesta_interna)
             for codigo, response in operation["responses"].items():
                 status_code = int(codigo) if str(codigo).isdigit() else 500
@@ -194,6 +208,52 @@ def generar_openapi():
             },
         },
     }
+    destination_example = {
+        "success": True,
+        "timestamp": utc_timestamp(),
+        "errorCode": None,
+        "data": {
+            "destination_id": 15,
+            "name": "Demo Nature Reserve",
+            "municipality_id": 63690,
+            "tourism_types": ["AVENTURA", "ECOTURISMO"],
+            "destination_status": "ABIERTO",
+            "coordinates_status": "PENDIENTES",
+            "status": "ACTIVO",
+        },
+    }
+    for method, response_code, message in (
+        ("post", "201", "Destination created successfully"),
+        ("put", "200", "Destination updated successfully"),
+    ):
+        destination_example["message"] = message
+        path = (
+            "/api/v1/geo/destinos"
+            if method == "post"
+            else "/api/v1/geo/destinos/{destination_id}"
+        )
+        esquema["paths"][path][method]["responses"][response_code]["content"][
+            "application/json"
+        ]["example"] = destination_example.copy()
+        esquema["paths"][path][method]["requestBody"]["content"][
+            "application/json"
+        ]["example"] = {
+            "name": "Demo Nature Reserve",
+            "description": "Protected natural area",
+            "municipality_id": 63690,
+            "tourism_types": ["AVENTURA", "ECOTURISMO"],
+            "activities": ["Hiking", "Bird watching"],
+            "main_image_url": "https://example.com/destinations/demo.jpg",
+            "destination_status": "ABIERTO",
+            "notices": [
+                {
+                    "notice_type": "SAFETY",
+                    "message": "Use the marked trail",
+                    "valid_from": "2026-11-26T08:00:00Z",
+                    "valid_until": "2026-11-27T18:00:00Z",
+                }
+            ],
+        }
     app.openapi_schema = esquema
     return esquema
 
@@ -280,6 +340,18 @@ async def manejar_error_validacion(
         else:
             mensaje = "The login data is invalid"
         return api_error_response(400, mensaje, "VALIDATION_ERROR")
+
+    if request.url.path.startswith("/api/v1/geo/destinos"):
+        error_items = error.errors()
+        if any(
+            item.get("loc", ())[-1:] in (("tourism_types",), ("tipos_turismo",))
+            and item.get("type") in {"too_short", "missing"}
+            for item in error_items
+        ):
+            mensaje = "At least one tourism type must be provided"
+        else:
+            mensaje = "The destination request is invalid"
+        return api_error_response(400, mensaje, "INVALID_DESTINATION")
 
     if request.url.path == "/api/v1/usuarios/registro":
         return api_error_response(400, "Registration data is invalid", "VALIDATION_ERROR")

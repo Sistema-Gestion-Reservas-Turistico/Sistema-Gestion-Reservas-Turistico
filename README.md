@@ -259,3 +259,10 @@ The response contract uses English JSON keys and messages:
 ```
 
 `GET /api/v1/auth/me` requires `Authorization: Bearer <token>` and returns the authenticated user and current session data. Missing, altered, expired, closed, or mismatched tokens return `401`.
+
+## Tourist destinations (NEW-01)
+
+- `POST /api/v1/geo/destinos` creates a destination; `PUT /api/v1/geo/destinos/{destination_id}` edits it. Both require an active Administrator JWT (`Authorization: Bearer <token>`).
+- The JSON request uses English keys (`name`, `municipality_id`, `tourism_types`, `activities`, `main_image_url`, `destination_status`, `notices`). Legacy Spanish request keys from the story are accepted for compatibility. The response uses English keys and messages; fixed domain codes such as `ABIERTO`, `ACTIVO`, and `PENDIENTES` are preserved.
+- Destination names must be unique within an enabled municipality. Tourism type codes must be active in `TIPO_TURISMO`. New records start as `ACTIVO` with coordinates `PENDIENTES`; editing preserves those lifecycle fields. Notice end dates cannot precede their start dates.
+- The current app uses in-memory adapters. Salento (`63690`) is seeded as the local enabled municipality, and `AVENTURA`/`ECOTURISMO` are seeded as tourism types. Data is lost when the process restarts and is not shared between teammates. Replace these adapters with the HU-14 municipality source and a persistent database adapter for shared durable data.
