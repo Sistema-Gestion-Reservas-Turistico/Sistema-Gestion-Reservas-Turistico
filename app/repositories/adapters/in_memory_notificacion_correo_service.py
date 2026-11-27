@@ -2,6 +2,7 @@ import logging
 from dataclasses import dataclass
 from datetime import datetime
 from threading import Lock
+from urllib.parse import parse_qs, urlparse
 
 from app.domain.entities.usuario import Usuario
 from app.domain.interfaces.notificacion_correo import NotificacionCorreoService
@@ -48,6 +49,13 @@ class InMemoryNotificacionCorreoService(NotificacionCorreoService):
                     cuerpo=cuerpo,
                 )
             )
+        token_extraido = parse_qs(urlparse(enlace_activacion).query).get("token", [""])[0]
+        detalle_token = f"\nToken: {token_extraido}" if token_extraido else ""
+        print(
+            f"\n[CORREO ACTIVACION] Para: {correo}\n"
+            f"Enlace: {enlace_activacion}{detalle_token}\n",
+            flush=True,
+        )
         _logger.info(
             "Enlace de activación enviado a %s: %s", correo, enlace_activacion
         )
@@ -82,3 +90,7 @@ class InMemoryNotificacionCorreoService(NotificacionCorreoService):
                     cuerpo=cuerpo,
                 )
             )
+        print(
+            f"\n[CORREO BLOQUEO] Para: {usuario.correo} | Hasta: {hora_fin}\n",
+            flush=True,
+        )
