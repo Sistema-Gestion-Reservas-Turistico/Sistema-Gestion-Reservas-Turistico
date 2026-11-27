@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, status
-from fastapi.responses import JSONResponse
+from app.api.responses import JSONResponse
 
 from app.api.dependencies.parametros_alojamiento_alimentacion import (
     obtener_caso_listar_parametros_alojamiento_alimentacion,
@@ -27,7 +27,7 @@ router = APIRouter(
 _ERROR_PERMISOS = {
     "summary": "Sin permisos",
     "value": {
-        "mensaje": "No tiene permisos para realizar esta acción",
+        "mensaje": "You are not authorized to perform this action",
         "data": None,
         "success": False,
     },
@@ -36,7 +36,7 @@ _ERROR_CONSULTA = {
     "summary": "Servicio no disponible",
     "value": {
         "mensaje": (
-            "No fue posible consultar los parámetros de alojamiento y alimentación"
+            "Accommodation and meal parameters could not be retrieved"
         ),
         "data": None,
         "success": False,
@@ -57,8 +57,8 @@ _ERROR_CONSULTA = {
                             "summary": "Parámetros agrupados",
                             "value": {
                                 "mensaje": (
-                                    "Consulta de parámetros de alojamiento y "
-                                    "alimentación exitosa"
+                                    "Accommodation and meal parameters retrieved "
+                                    "successfully"
                                 ),
                                 "data": {
                                     "categorias": [
@@ -147,7 +147,7 @@ def listar_parametros_alojamiento_alimentacion(
             content=_ERROR_CONSULTA["value"],
         )
     return ParametrosAlojamientoAlimentacionResponse(
-        mensaje="Consulta de parámetros de alojamiento y alimentación exitosa",
+        message="Accommodation and meal parameters retrieved successfully",
         data=ParametrosAlojamientoAlimentacionData(
             categorias=[
                 CategoriaAlojamientoAlimentacionData(

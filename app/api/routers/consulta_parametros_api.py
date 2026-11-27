@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, status
-from fastapi.responses import JSONResponse
+from app.api.responses import JSONResponse
 
 from app.api.dependencies.consulta_parametros import (
     obtener_caso_consultar_parametros_categoria,
@@ -52,15 +52,15 @@ def listar_parametros_vigentes(
     except CategoriaValorNoEncontradaError:
         return _error(
             status.HTTP_404_NOT_FOUND,
-            "La categoría indicada no existe",
+            "The specified category does not exist",
         )
     except ParametrosConsultaNoDisponiblesError:
         return _error(
             status.HTTP_503_SERVICE_UNAVAILABLE,
-            "No fue posible consultar los parámetros",
+            "Parameters could not be retrieved",
         )
     return ParametrosVigentesCategoriaResponse(
-        mensaje="Consulta de parámetros exitosa",
+        message="Parameters retrieved successfully",
         data=ParametrosVigentesCategoriaData(
             categoria=categoria,
             valores=[
@@ -96,20 +96,20 @@ def obtener_parametro_vigente(
     except CategoriaValorNoEncontradaError:
         return _error(
             status.HTTP_404_NOT_FOUND,
-            "La categoría indicada no existe",
+            "The specified category does not exist",
         )
     except ParametroNoVigenteError:
         return _error(
             status.HTTP_404_NOT_FOUND,
-            "El parámetro no existe o no está vigente",
+            "The parameter does not exist or is no longer active",
         )
     except ParametrosConsultaNoDisponiblesError:
         return _error(
             status.HTTP_503_SERVICE_UNAVAILABLE,
-            "No fue posible consultar los parámetros",
+            "Parameters could not be retrieved",
         )
     return ParametroVigenteResponse(
-        mensaje="Consulta de parámetro exitosa",
+        message="Parameter retrieved successfully",
         data=ParametroVigenteData.model_validate(valor),
         success=True,
     )

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, status
-from fastapi.responses import JSONResponse
+from app.api.responses import JSONResponse
 
 from app.api.dependencies.parametros_pagos import (
     obtener_caso_listar_parametros_pagos,
@@ -42,13 +42,13 @@ def listar_parametros_pagos(
         return JSONResponse(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             content={
-                "mensaje": "No fue posible consultar los parámetros de pagos",
+                "mensaje": "Payment parameters could not be retrieved",
                 "data": None,
                 "success": False,
             },
         )
     return ParametrosPagoResponse(
-        mensaje="Consulta de parámetros de pagos exitosa",
+        message="Payment parameters retrieved successfully",
         data=ParametrosPagoData(
             categorias=[
                 CategoriaParametroPagoData(
