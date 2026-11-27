@@ -231,7 +231,7 @@ class JSONResponse(FastAPIJSONResponse):
                     message=message,
                     timestamp=timestamp,
                     errorCode=codigo_error,
-                    data=data if codigo_error == "SESION_INACTIVA" else None,
+                    data=data if codigo_error in {"SESION_INACTIVA", "INVALID_CREDENTIALS", "ACCOUNT_LOCKED"} else None,
                 )
             content = envelope.model_dump()
 
